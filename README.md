@@ -1,4 +1,7 @@
 # FRITZ!Box Tools
+
+<a href="https://www.buymeacoffee.com/mammuth" target="_blank"><img src="https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
+
 Custom component for Home Assistant to control your FRITZ!Box
 
 **Features:**
