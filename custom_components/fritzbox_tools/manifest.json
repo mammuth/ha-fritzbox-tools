@@ -1,0 +1,8 @@
+{
+    "domain": "fritzbox_tools",
+    "name": "FRITZ!Box Tools",
+    "documentation": "https://github.com/mammuth/ha-fritzbox-tools/blob/master/README.md",
+    "codeowners": ["@mammuth"],
+    "dependencies": [],
+    "requirements": ["fritzconnection==0.8.2"]
+  }
