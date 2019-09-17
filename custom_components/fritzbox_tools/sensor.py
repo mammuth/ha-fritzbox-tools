@@ -7,7 +7,7 @@ from . import DOMAIN, DATA_FRITZ_TOOLS_INSTANCE
 
 _LOGGER = logging.getLogger(__name__)
 
-SCAN_INTERVAL = timedelta(seconds=5)
+SCAN_INTERVAL = timedelta(seconds=60)
 
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
