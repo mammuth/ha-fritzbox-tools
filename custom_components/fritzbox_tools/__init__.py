@@ -55,15 +55,17 @@ class FritzBoxTools(object):
         _LOGGER.info('Reconnecting the fritzbox.')
         self._connection.reconnect()
 
-    def _handle_guestwifi_turn_on_off(self, turn_on: bool) -> bool:
+    def handle_guestwifi_turn_on_off(self, turn_on: bool) -> bool:
         # pylint: disable=import-error
-        from fritzconnection.fritzconnection import ServiceError, ActionError
+        from fritzconnection.fritzconnection import ServiceError, ActionError, AuthorizationError
         new_state = '1' if turn_on else '0'
         try:
             self._connection.call_action('WLANConfiguration:3', 'SetEnable', NewEnable=new_state)
+        except AuthorizationError:
+            _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.')
+            _LOGGER.debug(e)
         except (ServiceError, ActionError) as e:
-            _LOGGER.error('Home Assistant cannot call the wished service on the FRITZ!Box. '
-                          'Are credentials, address and port correct?')
+            _LOGGER.error('Home Assistant cannot call the wished service on the FRITZ!Box.')
             _LOGGER.debug(e)
             return False
         else:
