@@ -48,33 +48,36 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
     def is_on(self) -> bool:
         return self._is_on
 
+    @property
+    def available(self) -> bool:
+        return self._is_available
+
     def update(self):
         _LOGGER.debug('Updating guest wifi switch state...')
-        from fritzconnection.fritzconnection import ServiceError, ActionError, AuthorizationError
+        from fritzconnection.fritzconnection import AuthorizationError
         try:
             status = self.fritzbox_tools._connection.call_action('WLANConfiguration:3', 'GetInfo')["NewStatus"]
             self._is_on = True if status == "Up" else False
+            self._is_available = True
         except AuthorizationError:
             _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.')
             _LOGGER.debug(e)
-        except (ServiceError, ActionError) as e:
+            self._is_available = False
+        except Exception as e:
             _LOGGER.error('Could not get Guest Wifi state')
             _LOGGER.debug(e)
+            self._is_available = False
 
     def turn_on(self, **kwargs) -> None:
         result: bool = self.fritzbox_tools.handle_guestwifi_turn_on_off(turn_on=True)
         if result is True:
             self._is_on = True
-            self._available = True
         else:
             _LOGGER.error("An error occurred while turning on fritzbox_tools Guest wifi switch.")
-            self._available = False
 
     def turn_off(self, **kwargs) -> None:
         result: bool = self.fritzbox_tools.handle_guestwifi_turn_on_off(turn_on=False)
         if result is True:
             self._is_on = False
-            self._available = True
         else:
             _LOGGER.error("An error occurred while turning off fritzbox_tools Guest wifi switch.")
-            self._available = False
