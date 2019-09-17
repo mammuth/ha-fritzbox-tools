@@ -63,11 +63,9 @@ class FritzBoxTools(object):
         try:
             self.connection.call_action('WLANConfiguration:3', 'SetEnable', NewEnable=new_state)
         except AuthorizationError:
-            _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.')
-            _LOGGER.debug(e)
-        except (ServiceError, ActionError) as e:
-            _LOGGER.error('Home Assistant cannot call the wished service on the FRITZ!Box.')
-            _LOGGER.debug(e)
+            _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.', exc_info=True)
+        except (ServiceError, ActionError):
+            _LOGGER.error('Home Assistant cannot call the wished service on the FRITZ!Box.', exc_info=True)
             return False
         else:
             return True
