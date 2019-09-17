@@ -11,7 +11,6 @@ SCAN_INTERVAL = timedelta(seconds=15)
 
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
-    """Set up the sensor platform."""
     _LOGGER.debug('Setting up switches')
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
     # add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools)])
@@ -30,19 +29,13 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 class FritzBoxGuestWifiSwitch(SwitchDevice):
     """Defines a fritzbox_tools Home switch."""
 
+    name = 'FRITZ!Box Guest Wifi'
+    icon = 'mdi:wifi'
     def __init__(self, fritzbox_tools):
         self.fritzbox_tools = fritzbox_tools
         self._is_on = False
         self._available = True  # set to False if an error happend during toggling the switch
         super().__init__()
-
-    @property
-    def name(self) -> str:
-        return 'FRITZ!Box Guest Wifi'
-
-    @property
-    def icon(self) -> str:
-        return 'mdi:wifi'
 
     @property
     def is_on(self) -> bool:
@@ -56,7 +49,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
         _LOGGER.debug('Updating guest wifi switch state...')
         from fritzconnection.fritzconnection import AuthorizationError
         try:
-            status = self.fritzbox_tools._connection.call_action('WLANConfiguration:3', 'GetInfo')["NewStatus"]
+            status = self.fritzbox_tools.connection.call_action('WLANConfiguration:3', 'GetInfo')["NewStatus"]
             self._is_on = True if status == "Up" else False
             self._is_available = True
         except AuthorizationError:

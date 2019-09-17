@@ -46,3 +46,9 @@ automation:
           title: "Guest wifi is enabled"
           message: "Password: ..."
 ```
+
+## Exposed entities
+
+- `service.reconnect`  Reconnect to your ISP
+- `switch.fritz_box_guest_wifi`  Turns on/off guest wifi
+- `sensor.fritz_box_connectivity`  online/offline depending on your internet connection
