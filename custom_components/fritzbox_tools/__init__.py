@@ -30,7 +30,7 @@ def setup(hass, config):
 
     hass.data.setdefault(DOMAIN, {})[DATA_FRITZ_TOOLS_INSTANCE] = fritz_tools
 
-    hass.services.register(DOMAIN, 'reconnect', fritz_tools.reconnect_fritzbox)
+    hass.services.register(DOMAIN, 'reconnect', fritz_tools.service_reconnect_fritzbox)
 
     # Load the other platforms like switch
     for domain in SUPPORTED_DOMAINS:
@@ -44,23 +44,24 @@ class FritzBoxTools(object):
     def __init__(self, host, port, username, password):
         # pylint: disable=import-error
         import fritzconnection as fc
-        self._connection = fc.FritzConnection(
+        self.connection = fc.FritzConnection(
             address=host,
             port=port,
             user=username,
             password=password
         )
+        self.fritzstatus = fc.FritzStatus(fc=self.connection)
 
-    def reconnect_fritzbox(self, call) -> None:
+    def service_reconnect_fritzbox(self, call) -> None:
         _LOGGER.info('Reconnecting the fritzbox.')
-        self._connection.reconnect()
+        self.connection.reconnect()
 
     def handle_guestwifi_turn_on_off(self, turn_on: bool) -> bool:
         # pylint: disable=import-error
         from fritzconnection.fritzconnection import ServiceError, ActionError, AuthorizationError
         new_state = '1' if turn_on else '0'
         try:
-            self._connection.call_action('WLANConfiguration:3', 'SetEnable', NewEnable=new_state)
+            self.connection.call_action('WLANConfiguration:3', 'SetEnable', NewEnable=new_state)
         except AuthorizationError:
             _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.')
             _LOGGER.debug(e)
