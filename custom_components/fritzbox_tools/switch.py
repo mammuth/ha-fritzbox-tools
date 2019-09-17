@@ -54,7 +54,6 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
             self._is_available = True
         except AuthorizationError:
             _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.')
-            _LOGGER.debug(e)
             self._is_available = False
         except Exception as e:
             _LOGGER.error('Could not get Guest Wifi state')
