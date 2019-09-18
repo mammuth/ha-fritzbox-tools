@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import timedelta
 
 from homeassistant.components.switch import SwitchDevice, PLATFORM_SCHEMA
