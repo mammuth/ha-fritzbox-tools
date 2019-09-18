@@ -35,6 +35,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
         self.fritzbox_tools = fritzbox_tools
         self._is_on = False
         self._available = True  # set to False if an error happend during toggling the switch
+        self._update_timestamp = time.time() - 60 
         super().__init__()
 
     @property
@@ -49,9 +50,10 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
         _LOGGER.debug('Updating guest wifi switch state...')
         from fritzconnection.fritzconnection import AuthorizationError
         try:
-            status = self.fritzbox_tools.connection.call_action('WLANConfiguration:3', 'GetInfo')["NewStatus"]
-            self._is_on = True if status == "Up" else False
-            self._is_available = True
+            if time.time() > (self._update_timestamp + 60):
+                status = self.fritzbox_tools.connection.call_action('WLANConfiguration:3', 'GetInfo')["NewStatus"]
+                self._is_on = True if status == "Up" else False
+                self._is_available = True
         except AuthorizationError:
             _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.')
             self._is_available = False
