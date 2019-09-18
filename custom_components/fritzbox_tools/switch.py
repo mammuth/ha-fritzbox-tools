@@ -64,6 +64,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
 
     def turn_on(self, **kwargs) -> None:
         result: bool = self.fritzbox_tools.handle_guestwifi_turn_on_off(turn_on=True)
+        self._update_timestamp = time.time()
         if result is True:
             self._is_on = True
         else:
@@ -71,6 +72,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
 
     def turn_off(self, **kwargs) -> None:
         result: bool = self.fritzbox_tools.handle_guestwifi_turn_on_off(turn_on=False)
+        self._update_timestamp = time.time()
         if result is True:
             self._is_on = False
         else:
