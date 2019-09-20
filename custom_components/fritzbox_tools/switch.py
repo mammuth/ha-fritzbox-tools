@@ -16,18 +16,19 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     _LOGGER.debug('Setting up switches')
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
     # add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools)])
-    n_ports_total = c.call_action('WANIPConnection:1', 'GetPortMappingNumberOfEntries')["NewPortMappingNumberOfEntries"]
-    port_mapping = []
-    for i in range(n_ports):
-        portmap = c.call_action("WANIPConnection:1", "GetGenericPortMappingEntry",NewPortMappingIndex=i)
+    n_ports_total = self.fritzbox_tools.connection.call_action('WANIPConnection:1', 'GetPortMappingNumberOfEntries')["NewPortMappingNumberOfEntries"]
+    port_mapping, idx = [],[]
+    for i in range(n_ports_total):
+        portmap = self.fritzbox_tools.connection.call_action("WANIPConnection:1", "GetGenericPortMappingEntry",NewPortMappingIndex=i)
+        idx.append(i)
         if mapping["NewInternalClient"]==fritzbox_tools.ip_device: port_mapping.append(portmap)
 
-    portswitches = [FritzBoxGuestPortsSwitch(fritzbox_tools,port_mapping[i],i) for i in range(len(port_mapping))]
+    portswitches = [FritzBoxPortsSwitch(fritzbox_tools,port_mapping[i],idx[i]) for i in range(len(port_mapping))]
 
     add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools),*portswitches], True)
     return True
 
-class FritzBoxGuestPortsSwitch(SwitchDevice):
+class FritzBoxPortsSwitch(SwitchDevice):
     """Defines a fritzbox_tools Home switch."""
 
     icon = 'mdi:lan'
@@ -46,7 +47,7 @@ class FritzBoxGuestPortsSwitch(SwitchDevice):
         super().__init__()
 
     @property
-    def name(self) -> string:
+    def name(self):
         return self._name
 
     @property
@@ -64,10 +65,11 @@ class FritzBoxGuestPortsSwitch(SwitchDevice):
             # This is because the router needs some time to change the guest wifi state
             _LOGGER.debug('Not updating switch state, because last toggle happend < 5 seconds ago')
         else:
-            _LOGGER.debug('Updating guest wifi switch state...')
+            _LOGGER.debug('Updating port switch state...')
             # Update state from device
             from fritzconnection.fritzconnection import AuthorizationError
             try:
+                self.port_mapping = self.fritzbox_tools.connection.call_action("WANIPConnection:1", "GetGenericPortMappingEntry",NewPortMappingIndex=self._idx)
                 self._is_on = True if self.port_mapping["NewEnabled"] == "1" else False
                 self._is_available = True
             except AuthorizationError:
