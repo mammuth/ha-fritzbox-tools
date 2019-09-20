@@ -16,12 +16,13 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     _LOGGER.debug('Setting up switches')
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
     # add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools)])
-    n_ports_total = self.fritzbox_tools.connection.call_action('WANIPConnection:1', 'GetPortMappingNumberOfEntries')["NewPortMappingNumberOfEntries"]
+    n_ports_total = fritzbox_tools.connection.call_action('WANIPConnection:1', 'GetPortMappingNumberOfEntries')["NewPortMappingNumberOfEntries"]
     port_mapping, idx = [],[]
     for i in range(n_ports_total):
-        portmap = self.fritzbox_tools.connection.call_action("WANIPConnection:1", "GetGenericPortMappingEntry",NewPortMappingIndex=i)
-        idx.append(i)
-        if mapping["NewInternalClient"]==fritzbox_tools.ip_device: port_mapping.append(portmap)
+        portmap = fritzbox_tools.connection.call_action("WANIPConnection:1", "GetGenericPortMappingEntry",NewPortMappingIndex=i)
+        if portmap["NewInternalClient"]==fritzbox_tools.ip_device:
+            port_mapping.append(portmap)
+            idx.append(i)
 
     portswitches = [FritzBoxPortsSwitch(fritzbox_tools,port_mapping[i],idx[i]) for i in range(len(port_mapping))]
 
@@ -38,10 +39,11 @@ class FritzBoxPortsSwitch(SwitchDevice):
         self.fritzbox_tools = fritzbox_tools
         self.port_mapping = port_mapping
 
-        self._name = "Switch of Port {:d} ({})".format(port_mapping["NewExternalPort"],port_mapping["NewProtocol"])
-        self._idx = idx # if we somehow need entity_ids
+        self._name = "Port {:d} ({})".format(port_mapping["NewExternalPort"],port_mapping["NewProtocol"])
+        self._unique_id = "port_{:d}_{}".format(port_mapping["NewExternalPort"],port_mapping["NewProtocol"])
+        self._idx = idx # needed for update routine
 
-        self._is_on = None
+        self._is_on = True if self.port_mapping["NewEnabled"] == "1" else False
         self._last_toggle_timestamp = None
         self._available = True  # set to False if an error happend during toggling the switch
         super().__init__()
@@ -49,6 +51,10 @@ class FritzBoxPortsSwitch(SwitchDevice):
     @property
     def name(self):
         return self._name
+
+    @property
+    def unique_id(self):
+        return self._unique_id
 
     @property
     def is_on(self) -> bool:
@@ -103,7 +109,7 @@ class FritzBoxPortsSwitch(SwitchDevice):
         new_state = '1' if turn_on else '0'
         self.port_mapping["NewEnabled"] = new_state
         try:
-            self.fritzbox_tools.connection.call_action("WANIPConnection:1","AddPortMapping",**self.port_mapping))
+            self.fritzbox_tools.connection.call_action("WANIPConnection:1","AddPortMapping",**self.port_mapping)
         except AuthorizationError:
             _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.', exc_info=True)
         except (ServiceError, ActionError):
@@ -117,7 +123,9 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
 
     name = 'FRITZ!Box Guest Wifi'
     icon = 'mdi:wifi'
+    unique_id = 'fritzbox_guestwifi'
     _update_grace_period = 5  # seconds
+
 
     def __init__(self, fritzbox_tools):
         self.fritzbox_tools = fritzbox_tools
