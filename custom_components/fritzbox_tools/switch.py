@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 from datetime import timedelta
+import time
 
 from homeassistant.components.switch import SwitchDevice, PLATFORM_SCHEMA
 
@@ -19,23 +20,17 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     return True
 
 
-# async def async_setup_platform(hass, config, add_entities, discovery_info=None):
-#     """Set up the sensor platform."""
-#     _LOGGER.debug('Setting up switches')
-#     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
-#     async_add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools)])
-#     return True
-
-
 class FritzBoxGuestWifiSwitch(SwitchDevice):
     """Defines a fritzbox_tools Home switch."""
 
     name = 'FRITZ!Box Guest Wifi'
     icon = 'mdi:wifi'
+    _update_grace_period = 5  # seconds
+
     def __init__(self, fritzbox_tools):
         self.fritzbox_tools = fritzbox_tools
         self._is_on = False
-        self._tmp_state: Optional[bool] = None  # We set this state after toggling the switch and use it on the next update method.
+        self._last_toggle_timestamp = None
         self._available = True  # set to False if an error happend during toggling the switch
         super().__init__()
 
@@ -48,15 +43,13 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
         return self._is_available
 
     def update(self):
-        _LOGGER.debug('Updating guest wifi switch state...')
-
-        # If the tmp state is set, return it. 
-        # We use this to avoid "state jiggling", because the call to the router takes a couple of seconds
-        if self._tmp_state is not None:
-            _LOGGER.debug('Update method will use temporary state and no real state from device')
-            self._is_on = self._tmp_state
-            self._tmp_state = None
+        if self._last_toggle_timestamp is not None \
+            and time.time() < self._last_toggle_timestamp + self._update_grace_period:
+            # We skip update for 5 seconds after toggling the switch
+            # This is because the router needs some time to change the guest wifi state
+            _LOGGER.debug('Not updating switch state, because last toggle happend < 5 seconds ago')
         else:
+            _LOGGER.debug('Updating guest wifi switch state...')
             # Update state from device
             from fritzconnection.fritzconnection import AuthorizationError
             try:
@@ -71,17 +64,19 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
                 self._is_available = False
 
     def turn_on(self, **kwargs) -> None:
-        result: bool = self.fritzbox_tools.handle_guestwifi_turn_on_off(turn_on=True)
-        if result is True:
-            self._tmp_state = True
+        success: bool = self.fritzbox_tools.handle_guestwifi_turn_on_off(turn_on=True)
+        if success is True:
+            self._is_on = True
+            self._last_toggle_timestamp = time.time()
         else:
-            self._tmp_state = False
+            self._is_on = False
             _LOGGER.error("An error occurred while turning on fritzbox_tools Guest wifi switch.")
 
     def turn_off(self, **kwargs) -> None:
-        result: bool = self.fritzbox_tools.handle_guestwifi_turn_on_off(turn_on=False)
-        if result is True:
-            self._tmp_state = False
+        success: bool = self.fritzbox_tools.handle_guestwifi_turn_on_off(turn_on=False)
+        if success is True:
+            self._is_on = False
+            self._last_toggle_timestamp = time.time()
         else:
-            self._tmp_state = True
+            self._is_on = True
             _LOGGER.error("An error occurred while turning off fritzbox_tools Guest wifi switch.")
