@@ -53,3 +53,10 @@ automation:
 - `service.reconnect`  Reconnect to your ISP
 - `switch.fritz_box_guest_wifi`  Turns on/off guest wifi
 - `sensor.fritz_box_connectivity`  online/offline depending on your internet connection
+
+
+## Contributors
+
+- [@mammuth](http://github.com/mammuth)
+- [@AaronDavidSchneider](http://github.com/AaronDavidSchneider)
+- [@jo-me](http://github.com/jo-me)
