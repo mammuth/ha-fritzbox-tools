@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 from datetime import timedelta
 
 from homeassistant.components.switch import SwitchDevice, PLATFORM_SCHEMA
@@ -34,6 +35,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
     def __init__(self, fritzbox_tools):
         self.fritzbox_tools = fritzbox_tools
         self._is_on = False
+        self._tmp_state: Optional[bool] = None  # We set this state after toggling the switch and use it on the next update method.
         self._available = True  # set to False if an error happend during toggling the switch
         super().__init__()
 
@@ -47,28 +49,39 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
 
     def update(self):
         _LOGGER.debug('Updating guest wifi switch state...')
-        from fritzconnection.fritzconnection import AuthorizationError
-        try:
-            status = self.fritzbox_tools.connection.call_action('WLANConfiguration:3', 'GetInfo')["NewStatus"]
-            self._is_on = True if status == "Up" else False
-            self._is_available = True
-        except AuthorizationError:
-            _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.')
-            self._is_available = False
-        except Exception:
-            _LOGGER.error('Could not get Guest Wifi state', exc_info=True)
-            self._is_available = False
+
+        # If the tmp state is set, return it. 
+        # We use this to avoid "state jiggling", because the call to the router takes a couple of seconds
+        if self._tmp_state is not None:
+            _LOGGER.debug('Update method will use temporary state and no real state from device')
+            self._is_on = self._tmp_state
+            self._tmp_state = None
+        else:
+            # Update state from device
+            from fritzconnection.fritzconnection import AuthorizationError
+            try:
+                status = self.fritzbox_tools.connection.call_action('WLANConfiguration:3', 'GetInfo')["NewStatus"]
+                self._is_on = True if status == "Up" else False
+                self._is_available = True
+            except AuthorizationError:
+                _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.')
+                self._is_available = False
+            except Exception:
+                _LOGGER.error('Could not get Guest Wifi state', exc_info=True)
+                self._is_available = False
 
     def turn_on(self, **kwargs) -> None:
         result: bool = self.fritzbox_tools.handle_guestwifi_turn_on_off(turn_on=True)
         if result is True:
-            self._is_on = True
+            self._tmp_state = True
         else:
+            self._tmp_state = False
             _LOGGER.error("An error occurred while turning on fritzbox_tools Guest wifi switch.")
 
     def turn_off(self, **kwargs) -> None:
         result: bool = self.fritzbox_tools.handle_guestwifi_turn_on_off(turn_on=False)
         if result is True:
-            self._is_on = False
+            self._tmp_state = False
         else:
+            self._tmp_state = True
             _LOGGER.error("An error occurred while turning off fritzbox_tools Guest wifi switch.")
