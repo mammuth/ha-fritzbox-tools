@@ -22,7 +22,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         portmap = c.call_action("WANIPConnection:1", "GetGenericPortMappingEntry",NewPortMappingIndex=i)
         if mapping["NewInternalClient"]==fritzbox_tools.ip_device: port_mapping.append(portmap)
 
-    portswitches = [FritzBoxGuestWifiSwitch(fritzbox_tools,port_mapping[i],i) for i in range(len(port_mapping))]
+    portswitches = [FritzBoxGuestPortsSwitch(fritzbox_tools,port_mapping[i],i) for i in range(len(port_mapping))]
 
     add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools),*portswitches], True)
     return True
