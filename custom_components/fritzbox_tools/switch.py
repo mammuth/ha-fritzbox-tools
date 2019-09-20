@@ -34,7 +34,7 @@ class FritzBoxPortsSwitch(SwitchDevice):
     icon = 'mdi:lan'
     _update_grace_period = 5  # seconds
 
-    def __init__(self, fritzbox_tools, port_mapping,idx):
+    def __init__(self, fritzbox_tools, port_mapping, idx):
         self.fritzbox_tools = fritzbox_tools
         self.port_mapping = port_mapping
 
@@ -97,7 +97,7 @@ class FritzBoxPortsSwitch(SwitchDevice):
             self._is_on = True
             _LOGGER.error("An error occurred while turning off fritzbox_tools Guest wifi switch.")
 
-    def _handle_guestwifi_turn_on_off(self, turn_on: bool) -> bool:
+    def _handle_port_switch_on_off(self, turn_on: bool) -> bool:
         # pylint: disable=import-error
         from fritzconnection.fritzconnection import ServiceError, ActionError, AuthorizationError
         new_state = '1' if turn_on else '0'
