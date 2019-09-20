@@ -19,6 +19,7 @@ fritzbox_tools:
   host: "192.168.178.1"
   username: "home-assistant"
   password: "yourfritzboxpassword"
+  ip_device: "ip_of_your_homeassistant"
 ```
   
   
