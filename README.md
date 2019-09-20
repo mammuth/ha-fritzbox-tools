@@ -8,7 +8,7 @@ Custom component for Home Assistant to control your FRITZ!Box
 
 - Turn on/off guest wifi
 - Reconnect your FRITZ!Box / get new IP from provider
-- Sensor for internet connectivity
+- Sensor for internet connectivity (with external IP and uptime attributes)
 
 ![image](https://user-images.githubusercontent.com/3121306/64920971-d42cb000-d7bd-11e9-8bdf-a21c7ea93c58.png)
 
