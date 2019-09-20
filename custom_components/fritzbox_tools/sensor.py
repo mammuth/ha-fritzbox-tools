@@ -1,5 +1,6 @@
 import logging
 from datetime import timedelta
+from collections import defaultdict
 
 from homeassistant.components.binary_sensor import BinarySensorDevice
 
@@ -27,6 +28,7 @@ class FritzBoxConnectivitySensor(BinarySensorDevice):
         self.fritzbox_tools = fritzbox_tools
         self._is_on = True  # We assume the fritzbox to be online initially
         self._is_available = True  # set to False if an error happend during toggling the switch
+        self._attributes = defaultdict(str)
         super().__init__()
 
     @property
@@ -37,14 +39,20 @@ class FritzBoxConnectivitySensor(BinarySensorDevice):
     def available(self) -> bool:
         return self._is_available
 
+    @property
+    def device_state_attributes(self) -> dict:
+        return self._attributes
+
     def update(self) -> None:
         _LOGGER.debug('Updating Connectivity sensor...')
         self._is_on = True
-        # try:
-        #     state = self.fritzbox_tools.fritzstatus.is_connected
-        #     self._is_on = state
-        #     self._is_available = True
-        # except Exception:
-        #     _LOGGER.error('Error getting the state from the FRITZ!Box', exc_info=True)
-        #     self._is_available = False
+        try:
+            status = self.fritzbox_tools.fritzstatus
+            self._is_on = status.is_connected
+            self._is_available = True
+            for attr in ['modelname', 'external_ip', 'external_ipv6', 'uptime', 'str_uptime']:
+                self._attributes[attr] = getattr(status, attr)
+        except Exception:
+            _LOGGER.error('Error getting the state from the FRITZ!Box', exc_info=True)
+            self._is_available = False
     
