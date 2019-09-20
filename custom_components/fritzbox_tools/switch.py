@@ -64,7 +64,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
                 self._is_available = False
 
     def turn_on(self, **kwargs) -> None:
-        success: bool = self.fritzbox_tools.handle_guestwifi_turn_on_off(turn_on=True)
+        success: bool = self._handle_guestwifi_turn_on_off(turn_on=True)
         if success is True:
             self._is_on = True
             self._last_toggle_timestamp = time.time()
@@ -73,10 +73,24 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
             _LOGGER.error("An error occurred while turning on fritzbox_tools Guest wifi switch.")
 
     def turn_off(self, **kwargs) -> None:
-        success: bool = self.fritzbox_tools.handle_guestwifi_turn_on_off(turn_on=False)
+        success: bool = self._handle_guestwifi_turn_on_off(turn_on=False)
         if success is True:
             self._is_on = False
             self._last_toggle_timestamp = time.time()
         else:
             self._is_on = True
             _LOGGER.error("An error occurred while turning off fritzbox_tools Guest wifi switch.")
+
+    def _handle_guestwifi_turn_on_off(self, turn_on: bool) -> bool:
+        # pylint: disable=import-error
+        from fritzconnection.fritzconnection import ServiceError, ActionError, AuthorizationError
+        new_state = '1' if turn_on else '0'
+        try:
+            self.fritzbox_tools.connection.call_action('WLANConfiguration:3', 'SetEnable', NewEnable=new_state)
+        except AuthorizationError:
+            _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.', exc_info=True)
+        except (ServiceError, ActionError):
+            _LOGGER.error('Home Assistant cannot call the wished service on the FRITZ!Box.', exc_info=True)
+            return False
+        else:
+            return True
