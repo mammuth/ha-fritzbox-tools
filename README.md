@@ -51,6 +51,7 @@ automation:
 ```
 
 **Port forwardings**
+
 It's possible to enable/disable port forwardings for the device which is running HomeAssistant. 
 
 Requirements:
