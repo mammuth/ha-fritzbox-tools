@@ -8,6 +8,7 @@ Custom component for Home Assistant to control your FRITZ!Box
 
 - Turn on/off guest wifi
 - Reconnect your FRITZ!Box / get new IP from provider
+- Manage port forwardings for your HomeAssistant device
 - Sensor for internet connectivity (with external IP and uptime attributes)
 
 ![image](https://user-images.githubusercontent.com/3121306/64920971-d42cb000-d7bd-11e9-8bdf-a21c7ea93c58.png)
@@ -49,11 +50,23 @@ automation:
           message: "Password: ..."
 ```
 
+**Port forwardings**
+It's possible to enable/disable port forwardings for the device which is running HomeAssistant. 
+
+Requirements:
+- Set the `homeassistant_ip` in the configuration of `fritzbox_tools`
+- On your FRITZ!Box, enable the setting `Selbstständige Portfreigaben für dieses Gerät erlauben.` for the device which runs HA
+
+The port forwards will be exposed as switches in your HA installation (search for `port_forward` in your entity page to find the IDs).
+
+Note: **Currently only port forwards for the device which is running HA are supported!**
+
 ## Exposed entities
 
 - `service.reconnect`  Reconnect to your ISP
 - `switch.fritz_box_guest_wifi`  Turns on/off guest wifi
 - `sensor.fritz_box_connectivity`  online/offline depending on your internet connection
+- `switch.port_forward_[description of your forward]` for each of your port forwards for your HA device
 
 
 ## Contributors
