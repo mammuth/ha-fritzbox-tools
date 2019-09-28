@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, List
 from datetime import timedelta
 import time
 
@@ -15,33 +15,41 @@ SCAN_INTERVAL = timedelta(seconds=15)
 def setup_platform(hass, config, add_entities, discovery_info=None):
     _LOGGER.debug('Setting up switches')
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
-    # add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools)])
-    n_ports_total = fritzbox_tools.connection.call_action('WANIPConnection:1', 'GetPortMappingNumberOfEntries')["NewPortMappingNumberOfEntries"]
-    port_mapping, idx = [],[]
-    for i in range(n_ports_total):
-        portmap = fritzbox_tools.connection.call_action("WANIPConnection:1", "GetGenericPortMappingEntry",NewPortMappingIndex=i)
-        if portmap["NewInternalClient"]==fritzbox_tools.ip_device:
-            port_mapping.append(portmap)
-            idx.append(i)
 
-    portswitches = [FritzBoxPortsSwitch(fritzbox_tools,port_mapping[i],idx[i]) for i in range(len(port_mapping))]
+    port_switches: List[FritzBoxPortSwitch] = []
+    if fritzbox_tools.ha_ip is not None:
+        _LOGGER.debug('Setting up port forward switches')
+        # Query port forwardings and setup a switch for each forward for the current deivce
+        port_forwards_count: int = fritzbox_tools.connection.call_action('WANIPConnection:1', 'GetPortMappingNumberOfEntries')["NewPortMappingNumberOfEntries"]
+        for i in range(port_forwards_count):
+            portmap = fritzbox_tools.connection.call_action("WANIPConnection:1", "GetGenericPortMappingEntry", NewPortMappingIndex=i)
+            # We can only handle port forwards of the given device
+            if portmap["NewInternalClient"] == fritzbox_tools.ha_ip:
+                port_switches.append(
+                    FritzBoxPortSwitch(fritzbox_tools, portmap, i)
+                )
 
-    add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools),*portswitches], True)
+    add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools)] + port_switches, True)
     return True
 
-class FritzBoxPortsSwitch(SwitchDevice):
-    """Defines a fritzbox_tools Home switch."""
+
+class FritzBoxPortSwitch(SwitchDevice):
+    """Defines a fritzbox_tools PortForward switch."""
 
     icon = 'mdi:lan'
     _update_grace_period = 5  # seconds
 
     def __init__(self, fritzbox_tools, port_mapping, idx):
         self.fritzbox_tools = fritzbox_tools
-        self.port_mapping = port_mapping
+        self.port_mapping: dict = port_mapping  # dict in the format as it comes from fritzconnection. eg: {'NewRemoteHost': '0.0.0.0', 'NewExternalPort': 22, 'NewProtocol': 'TCP', 'NewInternalPort': 22, 'NewInternalClient': '192.168.178.31', 'NewEnabled': '0', 'NewPortMappingDescription': 'Beast SSH ', 'NewLeaseDuration': 0}
 
-        self._name = "Port {:d} ({})".format(port_mapping["NewExternalPort"],port_mapping["NewProtocol"])
-        self._unique_id = "port_{:d}_{}".format(port_mapping["NewExternalPort"],port_mapping["NewProtocol"])
-        self._idx = idx # needed for update routine
+        self._name = "Port forward {}".format(port_mapping["NewPortMappingDescription"])
+        self._unique_id = "fritzbox_portforward_{ip}_{port}_{protocol}".format(
+            self.fritzbox_tools.ha_ip,
+            port_mapping["NewExternalPort"],
+            port_mapping["NewProtocol"]
+        )
+        self._idx = idx  # needed for update routine
 
         self._is_on = True if self.port_mapping["NewEnabled"] == "1" else False
         self._last_toggle_timestamp = None

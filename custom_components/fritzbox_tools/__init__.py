@@ -17,7 +17,7 @@ def setup(hass, config):
     port = config[DOMAIN].get('port', 49000)
     username = config[DOMAIN].get('username', '')
     password = config[DOMAIN].get('password', None)
-    ip_device = config[DOMAIN].get('ip_device', "192.168.178.4")
+    ha_ip = config[DOMAIN].get('homeassistant_ip', None)
 
     if not password:
         raise ValueError('Password is not set in configuration')
@@ -27,7 +27,7 @@ def setup(hass, config):
         port=port,
         username=username,
         password=password,
-        ip_device=ip_device
+        ha_ip=ha_ip
     )
 
     hass.data.setdefault(DOMAIN, {})[DATA_FRITZ_TOOLS_INSTANCE] = fritz_tools
@@ -43,7 +43,7 @@ def setup(hass, config):
 
 class FritzBoxTools(object):
 
-    def __init__(self, host, port, username, password, ip_device):
+    def __init__(self, host, port, username, password, ha_ip):
         # pylint: disable=import-error
         import fritzconnection as fc
         self.connection = fc.FritzConnection(
@@ -53,7 +53,7 @@ class FritzBoxTools(object):
             password=password
         )
         self.fritzstatus = fc.FritzStatus(fc=self.connection)
-        self.ip_device = ip_device
+        self.ha_ip = ha_ip
 
     def service_reconnect_fritzbox(self, call) -> None:
         _LOGGER.info('Reconnecting the fritzbox.')

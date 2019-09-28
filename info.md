@@ -19,7 +19,7 @@ fritzbox_tools:
   host: "192.168.178.1"
   username: "home-assistant"
   password: "yourfritzboxpassword"
-  ip_device: "ip_of_your_homeassistant"
+  homeassistant_ip: "192.168.178.42"  # Optional. Needed if you want to control port forwardings for the device running HomeAssistant
 ```
   
   

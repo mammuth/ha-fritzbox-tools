@@ -31,7 +31,7 @@ fritzbox_tools:
   host: "192.168.178.1"
   username: "home-assistant"
   password: "yourfritzboxpassword"
-  ip_device: "ip_of_homeassistant"
+  homeassistant_ip: "192.168.178.42"  # Optional. Needed if you want to control port forwardings for the device running HomeAssistant
 ```
 
 The custom component registers a switch for controlling the guest wifi and a service for triggering a reconnect. I use the following automation to send the guest wifi password to my wife's and my phones whenever we turn on the guest wifi:
