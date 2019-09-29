@@ -45,9 +45,9 @@ class FritzBoxPortSwitch(SwitchDevice):
 
         self._name = "Port forward {}".format(port_mapping["NewPortMappingDescription"])
         self._unique_id = "fritzbox_portforward_{ip}_{port}_{protocol}".format(
-            self.fritzbox_tools.ha_ip,
-            port_mapping["NewExternalPort"],
-            port_mapping["NewProtocol"]
+            ip=self.fritzbox_tools.ha_ip,
+            port=port_mapping["NewExternalPort"],
+            protocol=port_mapping["NewProtocol"]
         )
         self._idx = idx  # needed for update routine
 
