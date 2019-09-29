@@ -35,6 +35,44 @@ fritzbox_tools:
   homeassistant_ip: "192.168.178.42"  # Optional. Needed if you want to control port forwardings for the device running HomeAssistant
 ```
 
+**Port forwardings**
+
+It's possible to enable/disable port forwardings for the device which is running HomeAssistant. 
+
+Requirements:
+- Set the `homeassistant_ip` in the configuration of `fritzbox_tools`
+- On your FRITZ!Box, enable the setting `Selbstständige Portfreigaben für dieses Gerät erlauben.` for the device which runs HA
+
+The port forwards will be exposed as switches in your HA installation (search for `port_forward` in your entity page to find the IDs).
+
+Note: **Currently only port forwards for the device which is running HA are supported!**
+
+## Examples
+**Script: Reconnect / get new IP**
+
+The following script can be used to easily add a reconnect button to your UI.
+
+```
+fritz_box_reconnect:
+  alias: "Reconnect FRITZ!Box"
+  sequence:
+  - service: fritzbox_tools.reconnect
+```
+
+**Automation: Reconnect / get new IP every night**
+
+```
+automations:
+- alias: "System: Reconnect FRITZ!Box"
+  trigger:
+    platform: time
+    at: '05:00:00'
+  action:
+    - service: fritzbox_tools.reconnect
+```
+
+**Automation: Phone notification with wifi credentials when guest wifi is created**
+
 The custom component registers a switch for controlling the guest wifi and a service for triggering a reconnect. I use the following automation to send the guest wifi password to my wife's and my phones whenever we turn on the guest wifi:
 ```yaml
 automation:
@@ -50,17 +88,6 @@ automation:
           message: "Password: ..."
 ```
 
-**Port forwardings**
-
-It's possible to enable/disable port forwardings for the device which is running HomeAssistant. 
-
-Requirements:
-- Set the `homeassistant_ip` in the configuration of `fritzbox_tools`
-- On your FRITZ!Box, enable the setting `Selbstständige Portfreigaben für dieses Gerät erlauben.` for the device which runs HA
-
-The port forwards will be exposed as switches in your HA installation (search for `port_forward` in your entity page to find the IDs).
-
-Note: **Currently only port forwards for the device which is running HA are supported!**
 
 ## Exposed entities
 
