@@ -52,7 +52,7 @@ Note: **Currently only port forwards for the device which is running HA are supp
 
 The following script can be used to easily add a reconnect button to your UI.
 
-```
+```yaml
 fritz_box_reconnect:
   alias: "Reconnect FRITZ!Box"
   sequence:
@@ -61,8 +61,8 @@ fritz_box_reconnect:
 
 **Automation: Reconnect / get new IP every night**
 
-```
-automations:
+```yaml
+automation:
 - alias: "System: Reconnect FRITZ!Box"
   trigger:
     platform: time
