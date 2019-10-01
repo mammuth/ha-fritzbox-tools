@@ -29,7 +29,15 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                     FritzBoxPortSwitch(fritzbox_tools, portmap, i)
                 )
 
-    add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools)] + port_switches, True)
+    if fritz_tools.profile_on is not None:
+        devices = fritzbox_tools.profile_switch.get_devices()
+        profiles = fritzbox_tools.profile_switch.get_profiles()
+        profile_switches: List[FritzBoxProfileSwitch] = []
+        _LOGGER.debug('Setting up profile switches')
+        for i in range(len(devices)):
+            profile_switches.append(FritzProfileSwitch(fritzbox_tools, i))
+
+    add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools)] + port_switches + profile_switches, True)
     return True
 
 
@@ -121,6 +129,102 @@ class FritzBoxPortSwitch(SwitchDevice):
         except AuthorizationError:
             _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.', exc_info=True)
         except (ServiceError, ActionError):
+            _LOGGER.error('Home Assistant cannot call the wished service on the FRITZ!Box.', exc_info=True)
+            return False
+        else:
+            return True
+
+class FritzBoxProfileSwitch(SwitchDevice):
+    """Defines a fritzbox_tools DeviceProfile switch."""
+
+    icon = 'mdi:lan' # TODO: search for a better one
+    _update_grace_period = 5  # seconds
+
+    def __init__(self, fritzbox_tools, idx):
+        self.fritzbox_tools = fritzbox_tools
+
+        self.idx = idx
+        self.devices = self.fritzbox_tools.profile_switch.get_devices()
+        self.profiles = self.fritzbox_tools.profile_switch.get_profiles()
+        for i in range(len(self.profiles)):
+            if self.profiles[i]['name'] == self.fritzbox_tools.profile_off:
+                self.id_off = {"id":self.profiles[i]['id'],"idx":i}
+            elif self.profiles[i]['name'] == self.fritzbox_tools.profile_on:
+                self.id_on = {"id":self.profiles[i]['id'],"idx":i}
+
+        self._name = "Device Profile Switch for {}".format(self.devices[self.idx]["name"])
+        self._unique_id = "fritzbox_profile_{name}".format(self.devices[self.idx]["name"])
+
+        self._is_on = True if self.devices[self.idx]["profile"] == self.id_on["id"] else False
+        self._last_toggle_timestamp = None
+        self._available = True  # set to False if an error happend during toggling the switch
+        super().__init__()
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def unique_id(self):
+        return self._unique_id
+
+    @property
+    def is_on(self) -> bool:
+        return self._is_on
+
+    @property
+    def available(self) -> bool:
+        return self._is_available
+
+    def update(self):
+        if self._last_toggle_timestamp is not None \
+            and time.time() < self._last_toggle_timestamp + self._update_grace_period:
+            # We skip update for 5 seconds after toggling the switch
+            # This is because the router needs some time to change the guest wifi state
+            _LOGGER.debug('Not updating switch state, because last toggle happend < 5 seconds ago')
+        else:
+            _LOGGER.debug('Updating port switch state...')
+            # Update state from device
+            try:
+                self.fritzbox_tools.profile_switch.fetch_profiles()
+                self.fritzbox_tools.profile_switch.fetch_devices()
+                self.fritzbox_tools.profile_switch.fetch_device_profiles()
+                devices =  self.fritzbox_tools.profile_switch.get_devices()
+                profiles =  self.fritzbox_tools.profile_switch.get_profiles()
+                self._is_on = True if self.devices[self.idx]["profile"] == self.id_on["id"] else False
+                self._state = [[self.devices[self.idx]['id1'], self.devices[self.idx]["profile"]]]
+                self._is_available = True
+            except:
+                _LOGGER.error('Could not get state of profile switch') # TODO: get detailed error
+                self._is_available = False
+
+    def turn_on(self, **kwargs) -> None:
+        success: bool = self._handle_profile_switch_on_off(turn_on=True)
+        if success is True:
+            self._is_on = True
+            self._last_toggle_timestamp = time.time()
+        else:
+            self._is_on = False
+            _LOGGER.error("An error occurred while turning on fritzbox_tools Guest wifi switch.")
+
+    def turn_off(self, **kwargs) -> None:
+        success: bool = self._handle_profile_switch_on_off(turn_on=False)
+        if success is True:
+            self._is_on = False
+            self._last_toggle_timestamp = time.time()
+        else:
+            self._is_on = True
+            _LOGGER.error("An error occurred while turning off fritzbox_tools Guest wifi switch.")
+
+    def _handle_profile_switch_on_off(self, turn_on: bool) -> bool:
+        # pylint: disable=import-error
+        if turn_on:
+            self._state = [[self.devices[self.idx]['id1'], self.id_on["id"]]]
+        else:
+            self._state = [[self.devices[self.idx]['id1'], self.id_off["id"]]]
+        try:
+            self.fritzbox_tools.profile_switch.set_profiles(self._state)
+        except:
             _LOGGER.error('Home Assistant cannot call the wished service on the FRITZ!Box.', exc_info=True)
             return False
         else:
