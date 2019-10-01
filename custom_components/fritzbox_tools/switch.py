@@ -159,15 +159,13 @@ class FritzBoxProfileSwitch(SwitchDevice):
                 self.id_on = self.profiles[i]['id']
         # TODO: check if id_on has been set
 
-        self._name = "Device Profile Switch for {}".format(self.device["name"])
-        self._unique_id = "fritz_box_profile_{}".format(self.device["name"])
+        self._name = "FRITZ!Box Device Profile Switch for {}".format(self.device["name"])
+        self._unique_id = "profile_{}".format(self.device["name"])
 
-        if self.device["profile"] == self.id_on:
-            self._is_on = True
-        elif self.device["profile"] == self.id_off:
+        if self.device["profile"] == self.id_off:
             self._is_on = False
         else: self._is_on = True # TODO: Decide on default behaviour
-        
+
         self._last_toggle_timestamp = None
         self._available = True  # set to False if an error happend during toggling the switch
         if self.id_on is None or self.id_off is None: # thats the case if wrong setting in config.
@@ -209,9 +207,7 @@ class FritzBoxProfileSwitch(SwitchDevice):
                 for device in devices:
                     self.device = device if device["name"] == self.device["name"] else self.device
                 self.profiles =  self.fritzbox_tools.profile_switch.get_profiles()
-                if self.device["profile"] == self.id_on:
-                    self._is_on = True
-                elif self.device["profile"] == self.id_off:
+                if self.device["profile"] == self.id_off:
                     self._is_on = False
                 else: self._is_on = True # TODO: Decide on default behaviour
                 self._is_available = True
