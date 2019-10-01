@@ -37,7 +37,7 @@ fritzbox_tools:
 
 **Port forwardings**
 
-It's possible to enable/disable port forwardings for the device which is running HomeAssistant. 
+It's possible to enable/disable port forwardings for the device which is running HomeAssistant.
 
 Requirements:
 - Set the `homeassistant_ip` in the configuration of `fritzbox_tools`
@@ -46,6 +46,18 @@ Requirements:
 The port forwards will be exposed as switches in your HA installation (search for `port_forward` in your entity page to find the IDs).
 
 Note: **Currently only port forwards for the device which is running HA are supported!**
+
+**Device profiles**
+
+You can switch between two device profiles ("Zugangsprofile") within HomeAssistant for the devices within your network.
+
+Requirements:
+- Set `profile_on` and `profile_off` (default: "Gesperrt") in the configuration of `fritzbox_tools`
+- On your FRITZ!Box, configure the profiles you want to be able to set for your devices.
+
+The profile switches will be exposed as switches in your HA installation (search for `fritz_box_profile` in your entity page to find the IDs). If the switch is on `profile_on` is activated (or any other profile besides `profile_off`), if switch is off `profile_off` is activated.
+
+Note: **due to the underlying library, the update routine is not the fastest. This might result in warnings**
 
 ## Examples
 **Script: Reconnect / get new IP**
@@ -95,6 +107,7 @@ automation:
 - `switch.fritz_box_guest_wifi`  Turns on/off guest wifi
 - `sensor.fritz_box_connectivity`  online/offline depending on your internet connection
 - `switch.port_forward_[description of your forward]` for each of your port forwards for your HA device
+- `switch.fritz_box_profile_[name of your device]` for each device in your fritzbox network
 
 
 ## Contributors

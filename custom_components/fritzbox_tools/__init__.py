@@ -57,7 +57,7 @@ class FritzBoxTools(object):
             user=username,
             password=password
         )
-        self.profile_switch = FritzProfileSwitch(host, username, password)
+        self.profile_switch = FritzProfileSwitch("http://"+host, username, password)
         self.fritzstatus = fc.FritzStatus(fc=self.connection)
         self.ha_ip = ha_ip
         self.profile_on = profile_on
