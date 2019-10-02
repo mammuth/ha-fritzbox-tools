@@ -9,7 +9,7 @@ from . import DOMAIN, DATA_FRITZ_TOOLS_INSTANCE
 
 _LOGGER = logging.getLogger(__name__)
 
-SCAN_INTERVAL = timedelta(seconds=60) # update of profile switch takes too long
+SCAN_INTERVAL = timedelta(seconds=30) # update of profile switch takes too long
 
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
@@ -146,7 +146,7 @@ class FritzBoxProfileSwitch(SwitchDevice):
     # Note: Update routine is very slow. SCAN_INTERVAL should be set to higher values!
 
     icon = 'mdi:lan' # TODO: search for a better one
-    _update_grace_period = 15  # seconds
+    _update_grace_period = 30  # seconds
 
     def __init__(self, fritzbox_tools, device):
         self.fritzbox_tools = fritzbox_tools
@@ -199,10 +199,8 @@ class FritzBoxProfileSwitch(SwitchDevice):
         else:
             _LOGGER.debug('Updating profile switch state...')
             # Update state from device
+            self.fritzbox_tools.update_profiles()
             try:
-                self.fritzbox_tools.profile_switch.fetch_profiles()
-                self.fritzbox_tools.profile_switch.fetch_devices()
-                self.fritzbox_tools.profile_switch.fetch_device_profiles()
                 devices = self.fritzbox_tools.profile_switch.get_devices()
                 for device in devices:
                     self.device = device if device["name"] == self.device["name"] else self.device

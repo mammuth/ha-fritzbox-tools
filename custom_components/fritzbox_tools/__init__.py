@@ -1,5 +1,5 @@
 import logging
-
+import time
 from homeassistant.helpers import discovery
 
 DOMAIN = 'fritzbox_tools'
@@ -62,6 +62,15 @@ class FritzBoxTools(object):
         self.ha_ip = ha_ip
         self.profile_on = profile_on
         self.profile_off = profile_off
+        self.profile_last_updated = time.time()
+
+    def update_profiles(self):
+        if time.time() > self.profile_last_updated + 5:
+            # do not update profiles too often (takes too long...)!
+            self.profile_switch.fetch_profiles()
+            self.profile_switch.fetch_devices()
+            self.profile_switch.fetch_device_profiles()
+            self.profile_last_updated = time.time()
 
     def service_reconnect_fritzbox(self, call) -> None:
         _LOGGER.info('Reconnecting the fritzbox.')
