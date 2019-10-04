@@ -3,7 +3,7 @@ from typing import Optional, List
 from datetime import timedelta
 import time
 
-from homeassistant.components.switch import SwitchDevice, PLATFORM_SCHEMA
+from homeassistant.components.switch import SwitchDevice, PLATFORM_SCHEMA, ENTITY_ID_FORMAT
 
 from . import DOMAIN, DATA_FRITZ_TOOLS_INSTANCE
 
@@ -62,11 +62,12 @@ class FritzBoxPortSwitch(SwitchDevice):
         self.port_mapping: dict = port_mapping  # dict in the format as it comes from fritzconnection. eg: {'NewRemoteHost': '0.0.0.0', 'NewExternalPort': 22, 'NewProtocol': 'TCP', 'NewInternalPort': 22, 'NewInternalClient': '192.168.178.31', 'NewEnabled': '0', 'NewPortMappingDescription': 'Beast SSH ', 'NewLeaseDuration': 0}
 
         self._name = "Port forward {}".format(port_mapping["NewPortMappingDescription"])
-        self._unique_id = "fritzbox_portforward_{ip}_{port}_{protocol}".format(
+        id = "fritzbox_portforward_{ip}_{port}_{protocol}".format(
             ip=self.fritzbox_tools.ha_ip,
             port=port_mapping["NewExternalPort"],
             protocol=port_mapping["NewProtocol"]
         )
+        self.entity_id = ENTITY_ID_FORMAT.format(id.lower().replace("-","_"))
         self._idx = idx  # needed for update routine
 
         self._is_on = True if self.port_mapping["NewEnabled"] == "1" else False
@@ -77,10 +78,6 @@ class FritzBoxPortSwitch(SwitchDevice):
     @property
     def name(self):
         return self._name
-
-    @property
-    def unique_id(self):
-        return self._unique_id
 
     @property
     def is_on(self) -> bool:
@@ -160,10 +157,10 @@ class FritzBoxProfileSwitch(SwitchDevice):
                 self.id_off = self.profiles[i]['id']
             elif self.profiles[i]['name'] == self.fritzbox_tools.profile_on:
                 self.id_on = self.profiles[i]['id']
-        # TODO: check if id_on has been set
 
-        self._name = "FRITZ!Box Device Profile Switch for {}".format(self.device["name"])
-        self._unique_id = "profile_{}".format(self.device["name"])
+        self._name = "FRITZ!Box Device Profile {}".format(self.device["name"])
+        id = "fritzbox_profile_{}".format(self.device["name"])
+        self.entity_id = ENTITY_ID_FORMAT.format(id.lower().replace("-","_"))
 
         if self.device["profile"] == self.id_off:
             self._is_on = False
@@ -180,10 +177,6 @@ class FritzBoxProfileSwitch(SwitchDevice):
     @property
     def name(self):
         return self._name
-
-    @property
-    def unique_id(self):
-        return self._unique_id
 
     @property
     def is_on(self) -> bool:
@@ -253,7 +246,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
 
     name = 'FRITZ!Box Guest Wifi'
     icon = 'mdi:wifi'
-    unique_id = 'fritzbox_guestwifi'
+    entity_id = ENTITY_ID_FORMAT.format("fritzbox_guestwifi")
     _update_grace_period = 5  # seconds
 
 

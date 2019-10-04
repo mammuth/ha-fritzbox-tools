@@ -112,10 +112,10 @@ automation:
 ## Exposed entities
 
 - `service.reconnect`  Reconnect to your ISP
-- `switch.fritz_box_guest_wifi`  Turns on/off guest wifi
-- `sensor.fritz_box_connectivity`  online/offline depending on your internet connection
-- `switch.port_forward_[description of your forward]` for each of your port forwards for your HA device
-- `switch.fritz_box_profile_[name of your device]` for each device in your fritzbox network
+- `switch.fritzbox_guest_wifi`  Turns on/off guest wifi
+- `sensor.fritzbox_connectivity`  online/offline depending on your internet connection
+- `switch.fritzbox_portforward_[description of your forward]` for each of your port forwards for your HA device
+- `switch.fritzbox_profile_[name of your device]` for each device in your fritzbox network
 
 
 ## Contributors
