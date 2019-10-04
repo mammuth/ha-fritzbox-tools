@@ -20,6 +20,7 @@ def setup(hass, config):
     ha_ip = config[DOMAIN].get('homeassistant_ip', None)
     profile_off = config[DOMAIN].get('profile_off', 'Gesperrt')
     profile_on = config[DOMAIN].get('profile_on', None)
+    device_list = config[DOMAIN].get('device_list', None)
 
     if not password:
         raise ValueError('Password is not set in configuration')
@@ -31,7 +32,8 @@ def setup(hass, config):
         password=password,
         ha_ip=ha_ip,
         profile_on=profile_on,
-        profile_off=profile_off
+        profile_off=profile_off,
+        device_list=device_list
     )
 
     hass.data.setdefault(DOMAIN, {})[DATA_FRITZ_TOOLS_INSTANCE] = fritz_tools
@@ -47,7 +49,7 @@ def setup(hass, config):
 
 class FritzBoxTools(object):
 
-    def __init__(self, host, port, username, password, ha_ip, profile_on, profile_off):
+    def __init__(self, host, port, username, password, ha_ip, profile_on, profile_off, device_list):
         # pylint: disable=import-error
         import fritzconnection as fc
         from fritz_switch_profiles import FritzProfileSwitch
@@ -63,6 +65,7 @@ class FritzBoxTools(object):
         self.profile_on = profile_on
         self.profile_off = profile_off
         self.profile_last_updated = time.time()
+        self.device_list = device_list
 
     def update_profiles(self):
         if time.time() > self.profile_last_updated + 5:

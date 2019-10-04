@@ -36,6 +36,10 @@ fritzbox_tools:
   homeassistant_ip: "192.168.178.42"  # Optional. Needed if you want to control port forwardings for the device running HomeAssistant
   profile_on: "Standard"  # Optional. Needed if you want to switch between device profiles ("Zugangsprofile")
   profile_off: "Gesperrt"  # Optional. Needed if you want to switch between device profiles ("Zugangsprofile")
+  device_list: # Optional. If you don't want to expose a profile switch for just some of your network devices
+    - "Helens-iPhone"
+    - "Aarons-MacBook-Air"
+    - "..."
 ```
 
 **Port forwardings**
@@ -56,11 +60,12 @@ You can switch between two device profiles ("Zugangsprofile") within HomeAssista
 
 Requirements:
 - Set `profile_on` and `profile_off` (default: "Gesperrt") in the configuration of `fritzbox_tools`
+- Optionaly set `device_list` to only expose some devices.
 - On your FRITZ!Box, configure the profiles you want to be able to set for your devices.
 
 The profile switches will be exposed as switches in your HA installation (search for `fritz_box_profile` in your entity page to find the IDs). If the switch is on `profile_on` is activated (or any other profile besides `profile_off`), if switch is off `profile_off` is activated.
 
-Note: **due to the underlying library, the update routine is not the fastest. This might result in warnings**
+Note: **due to the underlying library, the update routine is not the fastest. This might result in warnings. **
 
 ## Examples
 **Script: Reconnect / get new IP**

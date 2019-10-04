@@ -40,7 +40,10 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                     _LOGGER.error('You have two devices in your network with the same hostname, this might break the profile switches. Change this and restart HomeAssistant.')
                     profile_available = False
                     break
-            profile_switches.append(FritzBoxProfileSwitch(fritzbox_tools, devices[i]))
+            if fritzbox_tools.device_list is None:
+                profile_switches.append(FritzBoxProfileSwitch(fritzbox_tools, devices[i]))
+            elif devices[i]["name"] in fritzbox_tools.device_list:
+                profile_switches.append(FritzBoxProfileSwitch(fritzbox_tools, devices[i]))
         if not profile_available: profile_switches = []
 
 
