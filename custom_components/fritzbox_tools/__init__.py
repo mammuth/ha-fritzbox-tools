@@ -4,7 +4,9 @@ from homeassistant.helpers import discovery
 
 DOMAIN = 'fritzbox_tools'
 SUPPORTED_DOMAINS = ['switch', 'sensor']
-REQUIREMENTS = ['fritzconnection==0.8.2', 'fritz-switch-profiles==1.0.0']
+
+REQUIREMENTS = ['fritzconnection==0.8.4', 'fritz-switch-profiles==1.0.0']
+
 
 DATA_FRITZ_TOOLS_INSTANCE = 'fritzbox_tools_instance'
 
