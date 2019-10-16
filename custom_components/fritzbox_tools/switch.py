@@ -18,16 +18,20 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
     port_switches: List[FritzBoxPortSwitch] = []
     if fritzbox_tools.ha_ip is not None:
-        _LOGGER.debug('Setting up port forward switches')
-        # Query port forwardings and setup a switch for each forward for the current deivce
-        port_forwards_count: int = fritzbox_tools.connection.call_action('WANIPConnection:1', 'GetPortMappingNumberOfEntries')["NewPortMappingNumberOfEntries"]
-        for i in range(port_forwards_count):
-            portmap = fritzbox_tools.connection.call_action("WANIPConnection:1", "GetGenericPortMappingEntry", NewPortMappingIndex=i)
-            # We can only handle port forwards of the given device
-            if portmap["NewInternalClient"] == fritzbox_tools.ha_ip:
-                port_switches.append(
-                    FritzBoxPortSwitch(fritzbox_tools, portmap, i)
-                )
+        try:
+            _LOGGER.debug('Setting up port forward switches')
+            # Query port forwardings and setup a switch for each forward for the current deivce
+            port_forwards_count: int = fritzbox_tools.connection.call_action('WANIPConnection:1', 'GetPortMappingNumberOfEntries')["NewPortMappingNumberOfEntries"]
+            for i in range(port_forwards_count):
+                portmap = fritzbox_tools.connection.call_action("WANIPConnection:1", "GetGenericPortMappingEntry", NewPortMappingIndex=i)
+                # We can only handle port forwards of the given device
+                if portmap["NewInternalClient"] == fritzbox_tools.ha_ip:
+                    port_switches.append(
+                        FritzBoxPortSwitch(fritzbox_tools, portmap, i)
+                    )
+        except:
+            _LOGGER.error('Port switches could not be enabled. Check if your fritzbox is able to do port forwardings!')
+
 
     profile_switches: List[FritzBoxProfileSwitch] = []
     if fritzbox_tools.profile_on is not None:

@@ -49,6 +49,7 @@ It's possible to enable/disable port forwardings for the device which is running
 Requirements:
 - Set the `homeassistant_ip` in the configuration of `fritzbox_tools`
 - On your FRITZ!Box, enable the setting `Selbstständige Portfreigaben für dieses Gerät erlauben.` for the device which runs HA
+- Only works if you have a dedicated IPv4 address (it won't work with DS-Lite)
 
 The port forwards will be exposed as switches in your HA installation (search for `port_forward` in your entity page to find the IDs).
 
