@@ -1,0 +1,14 @@
+ines (8 sloc)  192 Bytes
+
+language: python
+sudo: false
+
+branches: master  # This way push builds will only run on master branch. Does not affect PR builds.
+
+cache: pip
+
+install:
+  pip install flake8
+
+script:
+  git diff --name-only HEAD...$TRAVIS_BRANCH | flake8 --diff .
