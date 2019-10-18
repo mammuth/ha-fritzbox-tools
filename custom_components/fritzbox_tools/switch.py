@@ -20,14 +20,16 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     if fritzbox_tools.ha_ip is not None:
         try:
             _LOGGER.debug('Setting up port forward switches')
+            connection_type = fritzbox_tools.connection.call_action('Layer3Forwarding:1', 'GetDefaultConnectionService')["NewDefaultConnectionService"]
+            connection_type = connection_type[2:].replace(".",":")
             # Query port forwardings and setup a switch for each forward for the current deivce
-            port_forwards_count: int = fritzbox_tools.connection.call_action('WANIPConnection:1', 'GetPortMappingNumberOfEntries')["NewPortMappingNumberOfEntries"]
+            port_forwards_count: int = fritzbox_tools.connection.call_action(connection_type, 'GetPortMappingNumberOfEntries')["NewPortMappingNumberOfEntries"]
             for i in range(port_forwards_count):
-                portmap = fritzbox_tools.connection.call_action("WANIPConnection:1", "GetGenericPortMappingEntry", NewPortMappingIndex=i)
+                portmap = fritzbox_tools.connection.call_action(connection_type, "GetGenericPortMappingEntry", NewPortMappingIndex=i)
                 # We can only handle port forwards of the given device
                 if portmap["NewInternalClient"] == fritzbox_tools.ha_ip:
                     port_switches.append(
-                        FritzBoxPortSwitch(fritzbox_tools, portmap, i)
+                        FritzBoxPortSwitch(fritzbox_tools, portmap, i, connection_type)
                     )
         except:
             _LOGGER.error('Port switches could not be enabled. Check if your fritzbox is able to do port forwardings!')
@@ -43,12 +45,13 @@ class FritzBoxPortSwitch(SwitchDevice):
     icon = 'mdi:lan'
     _update_grace_period = 5  # seconds
 
-    def __init__(self, fritzbox_tools, port_mapping, idx):
+    def __init__(self, fritzbox_tools, port_mapping, idx, connection_type):
         self.fritzbox_tools = fritzbox_tools
+        self.connection_type = connection_type
         self.port_mapping: dict = port_mapping  # dict in the format as it comes from fritzconnection. eg: {'NewRemoteHost': '0.0.0.0', 'NewExternalPort': 22, 'NewProtocol': 'TCP', 'NewInternalPort': 22, 'NewInternalClient': '192.168.178.31', 'NewEnabled': '0', 'NewPortMappingDescription': 'Beast SSH ', 'NewLeaseDuration': 0}
 
         self._name = "Port forward {}".format(port_mapping["NewPortMappingDescription"])
-        self._unique_id = "fritzbox_portforward_{ip}_{port}_{protocol}".format(
+        id = "fritzbox_portforward_{ip}_{port}_{protocol}".format(
             ip=self.fritzbox_tools.ha_ip,
             port=port_mapping["NewExternalPort"],
             protocol=port_mapping["NewProtocol"]
@@ -63,10 +66,6 @@ class FritzBoxPortSwitch(SwitchDevice):
     @property
     def name(self):
         return self._name
-
-    @property
-    def unique_id(self):
-        return self._unique_id
 
     @property
     def is_on(self) -> bool:
@@ -87,7 +86,7 @@ class FritzBoxPortSwitch(SwitchDevice):
             # Update state from device
             from fritzconnection.fritzconnection import AuthorizationError
             try:
-                self.port_mapping = self.fritzbox_tools.connection.call_action("WANIPConnection:1", "GetGenericPortMappingEntry",NewPortMappingIndex=self._idx)
+                self.port_mapping = self.fritzbox_tools.connection.call_action(self.connection_type, "GetGenericPortMappingEntry",NewPortMappingIndex=self._idx)
                 self._is_on = True if self.port_mapping["NewEnabled"] == "1" else False
                 self._is_available = True
             except AuthorizationError:
@@ -121,7 +120,7 @@ class FritzBoxPortSwitch(SwitchDevice):
         new_state = '1' if turn_on else '0'
         self.port_mapping["NewEnabled"] = new_state
         try:
-            self.fritzbox_tools.connection.call_action("WANIPConnection:1","AddPortMapping",**self.port_mapping)
+            self.fritzbox_tools.connection.call_action(self.connection_type,"AddPortMapping",**self.port_mapping)
         except AuthorizationError:
             _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.', exc_info=True)
         except (ServiceError, ActionError):
