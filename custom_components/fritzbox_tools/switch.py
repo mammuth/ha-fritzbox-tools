@@ -65,11 +65,9 @@ class FritzBoxPortSwitch(SwitchDevice):
         self.fritzbox_tools = fritzbox_tools
         self.port_mapping: dict = port_mapping  # dict in the format as it comes from fritzconnection. eg: {'NewRemoteHost': '0.0.0.0', 'NewExternalPort': 22, 'NewProtocol': 'TCP', 'NewInternalPort': 22, 'NewInternalClient': '192.168.178.31', 'NewEnabled': '0', 'NewPortMappingDescription': 'Beast SSH ', 'NewLeaseDuration': 0}
 
-        self._name = "Port forward {}".format(port_mapping["NewPortMappingDescription"])
-        id = "fritzbox_portforward_{ip}_{port}_{protocol}".format(
-            ip=self.fritzbox_tools.ha_ip,
-            port=port_mapping["NewExternalPort"],
-            protocol=port_mapping["NewProtocol"]
+        self._name = "Port forward {}"
+        id = "fritzbox_portforward_{}".format(
+            port_mapping["NewPortMappingDescription"]
         )
         self.entity_id = ENTITY_ID_FORMAT.format(id.lower().replace("-","_"))
         self._idx = idx  # needed for update routine
