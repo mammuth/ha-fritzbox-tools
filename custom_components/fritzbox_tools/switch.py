@@ -159,6 +159,10 @@ class FritzBoxProfileSwitch(SwitchDevice):
                 self.id_off = self.profiles[i]['id']
             elif self.profiles[i]['name'] == self.fritzbox_tools.profile_on:
                 self.id_on = self.profiles[i]['id']
+        try: self.id_off, self.id_on
+        except:
+            _LOGGER.error("profile_on or profile_off does not match any profiles in your fritzbox")
+
 
         self._name = "FRITZ!Box Device Profile {}".format(self.device["name"])
         id = "fritzbox_profile_{}".format(self.device["name"])
