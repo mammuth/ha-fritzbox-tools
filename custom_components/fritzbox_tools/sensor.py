@@ -55,4 +55,3 @@ class FritzBoxConnectivitySensor(BinarySensorDevice):
         except Exception:
             _LOGGER.error('Error getting the state from the FRITZ!Box', exc_info=True)
             self._is_available = False
-    
