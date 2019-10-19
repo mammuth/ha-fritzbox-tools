@@ -4,6 +4,7 @@ from datetime import timedelta
 import time
 
 from homeassistant.components.switch import SwitchDevice, ENTITY_ID_FORMAT
+from homeassistant.util import slugify
 
 from . import DOMAIN, DATA_FRITZ_TOOLS_INSTANCE
 
