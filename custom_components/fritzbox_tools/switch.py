@@ -1,9 +1,9 @@
 import logging
-from typing import Optional, List
+from typing import List  # noqa
 from datetime import timedelta
 import time
 
-from homeassistant.components.switch import SwitchDevice, PLATFORM_SCHEMA, ENTITY_ID_FORMAT
+from homeassistant.components.switch import SwitchDevice, ENTITY_ID_FORMAT
 
 from . import DOMAIN, DATA_FRITZ_TOOLS_INSTANCE
 
@@ -20,18 +20,32 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     if fritzbox_tools.ha_ip is not None:
         try:
             _LOGGER.debug('Setting up port forward switches')
+            connection_type = fritzbox_tools.connection.call_action(
+                'Layer3Forwarding:1',
+                'GetDefaultConnectionService'
+            )['NewDefaultConnectionService']
+            connection_type = connection_type[2:].replace('.', ':')
+
             # Query port forwardings and setup a switch for each forward for the current deivce
-            port_forwards_count: int = fritzbox_tools.connection.call_action('WANIPConnection:1', 'GetPortMappingNumberOfEntries')["NewPortMappingNumberOfEntries"]
+            port_forwards_count: int = fritzbox_tools.connection.call_action(
+                connection_type, 'GetPortMappingNumberOfEntries'
+            )['NewPortMappingNumberOfEntries']
             for i in range(port_forwards_count):
-                portmap = fritzbox_tools.connection.call_action("WANIPConnection:1", "GetGenericPortMappingEntry", NewPortMappingIndex=i)
+                portmap = fritzbox_tools.connection.call_action(
+                    connection_type,
+                    'GetGenericPortMappingEntry',
+                    NewPortMappingIndex=i
+                )
                 # We can only handle port forwards of the given device
-                if portmap["NewInternalClient"] == fritzbox_tools.ha_ip:
+                if portmap['NewInternalClient'] == fritzbox_tools.ha_ip:
                     port_switches.append(
-                        FritzBoxPortSwitch(fritzbox_tools, portmap, i)
+                        FritzBoxPortSwitch(fritzbox_tools, portmap, i, connection_type)
                     )
         except:
-            _LOGGER.error('Port switches could not be enabled. Check if your fritzbox is able to do port forwardings!')
-
+            _LOGGER.error(
+                'Port switches could not be enabled. Check if your fritzbox is able to do port forwardings!',
+                exc_info=True
+            )
 
     profile_switches: List[FritzBoxProfileSwitch] = []
     if fritzbox_tools.profile_on is not None:
@@ -61,18 +75,19 @@ class FritzBoxPortSwitch(SwitchDevice):
     icon = 'mdi:lan'
     _update_grace_period = 5  # seconds
 
-    def __init__(self, fritzbox_tools, port_mapping, idx):
+    def __init__(self, fritzbox_tools, port_mapping, idx, connection_type):
         self.fritzbox_tools = fritzbox_tools
-        self.port_mapping: dict = port_mapping  # dict in the format as it comes from fritzconnection. eg: {'NewRemoteHost': '0.0.0.0', 'NewExternalPort': 22, 'NewProtocol': 'TCP', 'NewInternalPort': 22, 'NewInternalClient': '192.168.178.31', 'NewEnabled': '0', 'NewPortMappingDescription': 'Beast SSH ', 'NewLeaseDuration': 0}
+        self.connection_type = connection_type
+        self.port_mapping: dict = port_mapping  # dict in the format as it comes from fritzconnection. eg: {'NewRemoteHost': '0.0.0.0', 'NewExternalPort': 22, 'NewProtocol': 'TCP', 'NewInternalPort': 22, 'NewInternalClient': '192.168.178.31', 'NewEnabled': '0', 'NewPortMappingDescription': 'Beast SSH ', 'NewLeaseDuration': 0}  # noqa
 
         self._name = "Port forward {}"
         id = "fritzbox_portforward_{}".format(
             port_mapping["NewPortMappingDescription"]
         )
-        self.entity_id = ENTITY_ID_FORMAT.format(id.lower().replace("-","_"))
+        self.entity_id = ENTITY_ID_FORMAT.format(slugify(id))
         self._idx = idx  # needed for update routine
 
-        self._is_on = True if self.port_mapping["NewEnabled"] == "1" else False
+        self._is_on = True if self.port_mapping['NewEnabled'] == '1' else False
         self._last_toggle_timestamp = None
         self._available = True  # set to False if an error happend during toggling the switch
         super().__init__()
@@ -91,7 +106,7 @@ class FritzBoxPortSwitch(SwitchDevice):
 
     def update(self):
         if self._last_toggle_timestamp is not None \
-            and time.time() < self._last_toggle_timestamp + self._update_grace_period:
+                and time.time() < self._last_toggle_timestamp + self._update_grace_period:
             # We skip update for 5 seconds after toggling the switch
             # This is because the router needs some time to change the guest wifi state
             _LOGGER.debug('Not updating switch state, because last toggle happend < 5 seconds ago')
@@ -100,15 +115,20 @@ class FritzBoxPortSwitch(SwitchDevice):
             # Update state from device
             from fritzconnection.fritzconnection import AuthorizationError
             try:
-                self.port_mapping = self.fritzbox_tools.connection.call_action("WANIPConnection:1", "GetGenericPortMappingEntry",NewPortMappingIndex=self._idx)
-                self._is_on = True if self.port_mapping["NewEnabled"] == "1" else False
+                self.port_mapping = self.fritzbox_tools.connection.call_action(
+                    self.connection_type,
+                    'GetGenericPortMappingEntry',
+                    NewPortMappingIndex=self._idx
+                )
+                self._is_on = True if self.port_mapping['NewEnabled'] == '1' else False
                 self._is_available = True
             except AuthorizationError:
-                _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.')
-                self._is_available = False
+                _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log '
+                              'into the web interface.')
+                self._is_available = False  # noqa
             except Exception:
                 _LOGGER.error('Could not get state of Port forwarding', exc_info=True)
-                self._is_available = False
+                self._is_available = False  # noqa
 
     def turn_on(self, **kwargs) -> None:
         success: bool = self._handle_port_switch_on_off(turn_on=True)
@@ -117,7 +137,7 @@ class FritzBoxPortSwitch(SwitchDevice):
             self._last_toggle_timestamp = time.time()
         else:
             self._is_on = False
-            _LOGGER.error("An error occurred while turning on fritzbox_tools Guest wifi switch.")
+            _LOGGER.error('An error occurred while turning on fritzbox_tools Guest wifi switch.')
 
     def turn_off(self, **kwargs) -> None:
         success: bool = self._handle_port_switch_on_off(turn_on=False)
@@ -126,17 +146,18 @@ class FritzBoxPortSwitch(SwitchDevice):
             self._last_toggle_timestamp = time.time()
         else:
             self._is_on = True
-            _LOGGER.error("An error occurred while turning off fritzbox_tools Guest wifi switch.")
+            _LOGGER.error('An error occurred while turning off fritzbox_tools Guest wifi switch.')
 
     def _handle_port_switch_on_off(self, turn_on: bool) -> bool:
         # pylint: disable=import-error
         from fritzconnection.fritzconnection import ServiceError, ActionError, AuthorizationError
         new_state = '1' if turn_on else '0'
-        self.port_mapping["NewEnabled"] = new_state
+        self.port_mapping['NewEnabled'] = new_state
         try:
-            self.fritzbox_tools.connection.call_action("WANIPConnection:1","AddPortMapping",**self.port_mapping)
+            self.fritzbox_tools.connection.call_action(self.connection_type, 'AddPortMapping', **self.port_mapping)
         except AuthorizationError:
-            _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.', exc_info=True)
+            _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into '
+                          'the web interface.', exc_info=True)
         except (ServiceError, ActionError):
             _LOGGER.error('Home Assistant cannot call the wished service on the FRITZ!Box.', exc_info=True)
             return False
@@ -166,7 +187,7 @@ class FritzBoxProfileSwitch(SwitchDevice):
 
         self._name = "FRITZ!Box Device Profile {}".format(self.device["name"])
         id = "fritzbox_profile_{}".format(self.device["name"])
-        self.entity_id = ENTITY_ID_FORMAT.format(id.lower().replace("-","_"))
+        self.entity_id = ENTITY_ID_FORMAT.format(slugify(id))
 
         if self.device["profile"] == self.id_off:
             self._is_on = False
@@ -255,7 +276,6 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
     entity_id = ENTITY_ID_FORMAT.format("fritzbox_guestwifi")
     _update_grace_period = 5  # seconds
 
-
     def __init__(self, fritzbox_tools):
         self.fritzbox_tools = fritzbox_tools
         self._is_on = False
@@ -273,7 +293,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
 
     def update(self):
         if self._last_toggle_timestamp is not None \
-            and time.time() < self._last_toggle_timestamp + self._update_grace_period:
+                and time.time() < self._last_toggle_timestamp + self._update_grace_period:
             # We skip update for 5 seconds after toggling the switch
             # This is because the router needs some time to change the guest wifi state
             _LOGGER.debug('Not updating switch state, because last toggle happend < 5 seconds ago')
@@ -282,11 +302,12 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
             # Update state from device
             from fritzconnection.fritzconnection import AuthorizationError
             try:
-                status = self.fritzbox_tools.connection.call_action('WLANConfiguration:3', 'GetInfo')["NewStatus"]
-                self._is_on = True if status == "Up" else False
+                status = self.fritzbox_tools.connection.call_action('WLANConfiguration:3', 'GetInfo')['NewStatus']
+                self._is_on = True if status == 'Up' else False
                 self._is_available = True
             except AuthorizationError:
-                _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.')
+                _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log '
+                              'into the web interface.')
                 self._is_available = False
             except Exception:
                 _LOGGER.error('Could not get Guest Wifi state', exc_info=True)
@@ -299,7 +320,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
             self._last_toggle_timestamp = time.time()
         else:
             self._is_on = False
-            _LOGGER.error("An error occurred while turning on fritzbox_tools Guest wifi switch.")
+            _LOGGER.error('An error occurred while turning on fritzbox_tools Guest wifi switch.')
 
     def turn_off(self, **kwargs) -> None:
         success: bool = self._handle_guestwifi_turn_on_off(turn_on=False)
@@ -308,7 +329,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
             self._last_toggle_timestamp = time.time()
         else:
             self._is_on = True
-            _LOGGER.error("An error occurred while turning off fritzbox_tools Guest wifi switch.")
+            _LOGGER.error('An error occurred while turning off fritzbox_tools Guest wifi switch.')
 
     def _handle_guestwifi_turn_on_off(self, turn_on: bool) -> bool:
         # pylint: disable=import-error
@@ -317,7 +338,8 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
         try:
             self.fritzbox_tools.connection.call_action('WLANConfiguration:3', 'SetEnable', NewEnable=new_state)
         except AuthorizationError:
-            _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into the web interface.', exc_info=True)
+            _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into '
+                          'the web interface.', exc_info=True)
         except (ServiceError, ActionError):
             _LOGGER.error('Home Assistant cannot call the wished service on the FRITZ!Box.', exc_info=True)
             return False
