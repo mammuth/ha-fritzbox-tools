@@ -2,7 +2,7 @@ import logging
 from datetime import timedelta
 from collections import defaultdict
 
-from homeassistant.components.binary_sensor import BinarySensorDevice
+from homeassistant.components.binary_sensor import BinarySensorDevice, ENTITY_ID_FORMAT
 
 from . import DOMAIN, DATA_FRITZ_TOOLS_INSTANCE
 
@@ -21,6 +21,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
 class FritzBoxConnectivitySensor(BinarySensorDevice):
     name = 'FRITZ!Box Connectivity'
+    entity_id = ENTITY_ID_FORMAT.format('fritzbox_connectivity')
     icon = 'mdi:router-wireless'
     device_class = 'connectivity'
 
