@@ -3,6 +3,8 @@ from typing import List  # noqa
 from datetime import timedelta
 import time
 
+from collections import Counter
+
 from homeassistant.components.switch import SwitchDevice, ENTITY_ID_FORMAT
 from homeassistant.util import slugify
 
@@ -50,23 +52,23 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
     profile_switches: List[FritzBoxProfileSwitch] = []
     if fritzbox_tools.profile_on is not None:
-        profile_available = True
         _LOGGER.debug('Setting up profile switches')
         devices = fritzbox_tools.profile_switch.get_devices()
-        for i in range(len(devices)):
-            # TODO: a solution without two loops would be faster (python is really bad with nested loops)
-            for j in range(len(devices)):
-                if devices[i]["name"] == devices[j]["name"] and i != j:
-                    _LOGGER.error('You have two devices in your network with the same hostname, this might break the '
-                                  'profile switches. Change this and restart HomeAssistant.')
-                    profile_available = False
-                    break
-            if fritzbox_tools.device_list is None:
-                profile_switches.append(FritzBoxProfileSwitch(fritzbox_tools, devices[i]))
-            elif devices[i]["name"] in fritzbox_tools.device_list:
-                profile_switches.append(FritzBoxProfileSwitch(fritzbox_tools, devices[i]))
-        if not profile_available:
-            profile_switches = []
+
+        # Identify duplicated host names and log an error message
+        hostname_count = Counter([device['name'] for device in devices])
+        duplicated_hostnames = [name for name, occurence in hostname_count.items() if occurence > 1]
+        if len(duplicated_hostnames) > 0:
+            _LOGGER.error('You have multiple devices with the hostname {} in your network. '
+                          'There will be no profile switches created for these.'.format(', '.join(duplicated_hostnames))
+            )
+
+        # add device switches
+        for device in devices:
+            # Check for duplicated host names in the devices list.
+            if device['name'] not in duplicated_hostnames:
+                if fritzbox_tools.device_list is None or device['name'] in fritzbox_tools.device_list:
+                    profile_switches.append(FritzBoxProfileSwitch(fritzbox_tools, device))
 
     add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools)] + port_switches + profile_switches, True)
     return True
