@@ -3,7 +3,7 @@ from typing import List  # noqa
 from datetime import timedelta
 import time
 
-from collections import Counter
+from collections import Counter, defaultdict
 
 from homeassistant.components.switch import SwitchDevice, ENTITY_ID_FORMAT
 from homeassistant.util import slugify
@@ -85,16 +85,21 @@ class FritzBoxPortSwitch(SwitchDevice):
         self.connection_type = connection_type
         self.port_mapping: dict = port_mapping  # dict in the format as it comes from fritzconnection. eg: {'NewRemoteHost': '0.0.0.0', 'NewExternalPort': 22, 'NewProtocol': 'TCP', 'NewInternalPort': 22, 'NewInternalClient': '192.168.178.31', 'NewEnabled': '0', 'NewPortMappingDescription': 'Beast SSH ', 'NewLeaseDuration': 0}  # noqa
 
-        self._name = "Port forward {}"
-        id = "fritzbox_portforward_{}".format(
+        self._name = "Port forward {}".format(
             port_mapping["NewPortMappingDescription"]
         )
-        self.entity_id = ENTITY_ID_FORMAT.format(slugify(id))
-        self._idx = idx  # needed for update routine
+        id = "fritzbox_portforward_{}".format(
+            slugify(port_mapping["NewPortMappingDescription"])
+        )
+        self.entity_id = ENTITY_ID_FORMAT.format(id)
 
-        self._is_on = True if self.port_mapping['NewEnabled'] == '1' else False
-        self._last_toggle_timestamp = None
+        self._attributes = defaultdict(str)
         self._available = True  # set to False if an error happend during toggling the switch
+        self._is_on = True if self.port_mapping['NewEnabled'] == '1' else False
+        self._attributes = defaultdict(str)
+
+        self._idx = idx  # needed for update routine
+        self._last_toggle_timestamp = None
         super().__init__()
 
     @property
@@ -108,6 +113,10 @@ class FritzBoxPortSwitch(SwitchDevice):
     @property
     def available(self) -> bool:
         return self._is_available
+
+    @property
+    def device_state_attributes(self) -> dict:
+        return self._attributes
 
     def update(self):
         if self._last_toggle_timestamp is not None \
@@ -127,6 +136,12 @@ class FritzBoxPortSwitch(SwitchDevice):
                 )
                 self._is_on = True if self.port_mapping['NewEnabled'] == '1' else False
                 self._is_available = True
+
+                self._attributes['internalIP'] = self.port_mapping['NewInternalClient']
+                self._attributes['internalPort'] = self.port_mapping['NewInternalPort']
+                self._attributes['externalPort'] = self.port_mapping['NewExternalPort']
+                self._attributes['protocol'] = self.port_mapping['NewProtocol']
+                self._attributes['description'] = self.port_mapping['NewPortMappingDescription']
             except AuthorizationError:
                 _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log '
                               'into the web interface.')
@@ -191,7 +206,7 @@ class FritzBoxProfileSwitch(SwitchDevice):
         except:
             _LOGGER.error("profile_on or profile_off does not match any profiles in your fritzbox")
 
-        self._name = "FRITZ!Box Device Profile {}".format(self.device["name"])
+        self._name = "Device Profile {}".format(self.device["name"])
         id = "fritzbox_profile_{}".format(self.device["name"])
         self.entity_id = ENTITY_ID_FORMAT.format(slugify(id))
 
