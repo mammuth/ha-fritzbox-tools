@@ -1,7 +1,8 @@
-import logging
+async def async_updateimport logging
 from typing import List  # noqa
 from datetime import timedelta
 import time
+import asyncio
 
 from collections import Counter, defaultdict
 
@@ -15,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 SCAN_INTERVAL = timedelta(seconds=30)  # update of profile switch takes too long
 
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(hass, config, add_entities, discovery_info=None):
     _LOGGER.debug('Setting up switches')
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
 
@@ -96,7 +97,6 @@ class FritzBoxPortSwitch(SwitchDevice):
         self._attributes = defaultdict(str)
         self._available = True  # set to False if an error happend during toggling the switch
         self._is_on = True if self.port_mapping['NewEnabled'] == '1' else False
-        self._attributes = defaultdict(str)
 
         self._idx = idx  # needed for update routine
         self._last_toggle_timestamp = None
@@ -118,7 +118,31 @@ class FritzBoxPortSwitch(SwitchDevice):
     def device_state_attributes(self) -> dict:
         return self._attributes
 
-    def update(self):
+    async def _async_fetch_update(self):
+        from fritzconnection.fritzconnection import AuthorizationError
+        try:
+            self.port_mapping = self.fritzbox_tools.connection.call_action(
+                self.connection_type,
+                'GetGenericPortMappingEntry',
+                NewPortMappingIndex=self._idx
+            )
+            self._is_on = True if self.port_mapping['NewEnabled'] == '1' else False
+            self._is_available = True
+
+            self._attributes['internalIP'] = self.port_mapping['NewInternalClient']
+            self._attributes['internalPort'] = self.port_mapping['NewInternalPort']
+            self._attributes['externalPort'] = self.port_mapping['NewExternalPort']
+            self._attributes['protocol'] = self.port_mapping['NewProtocol']
+            self._attributes['description'] = self.port_mapping['NewPortMappingDescription']
+        except AuthorizationError:
+            _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log '
+                          'into the web interface.')
+            self._is_available = False  # noqa
+        except Exception:
+            _LOGGER.error('Could not get state of Port forwarding', exc_info=True)
+            self._is_available = False  # noqa
+
+    async def async_update(self):
         if self._last_toggle_timestamp is not None \
                 and time.time() < self._last_toggle_timestamp + self._update_grace_period:
             # We skip update for 5 seconds after toggling the switch
@@ -127,31 +151,10 @@ class FritzBoxPortSwitch(SwitchDevice):
         else:
             _LOGGER.debug('Updating port switch state...')
             # Update state from device
-            from fritzconnection.fritzconnection import AuthorizationError
-            try:
-                self.port_mapping = self.fritzbox_tools.connection.call_action(
-                    self.connection_type,
-                    'GetGenericPortMappingEntry',
-                    NewPortMappingIndex=self._idx
-                )
-                self._is_on = True if self.port_mapping['NewEnabled'] == '1' else False
-                self._is_available = True
-
-                self._attributes['internalIP'] = self.port_mapping['NewInternalClient']
-                self._attributes['internalPort'] = self.port_mapping['NewInternalPort']
-                self._attributes['externalPort'] = self.port_mapping['NewExternalPort']
-                self._attributes['protocol'] = self.port_mapping['NewProtocol']
-                self._attributes['description'] = self.port_mapping['NewPortMappingDescription']
-            except AuthorizationError:
-                _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log '
-                              'into the web interface.')
-                self._is_available = False  # noqa
-            except Exception:
-                _LOGGER.error('Could not get state of Port forwarding', exc_info=True)
-                self._is_available = False  # noqa
+            await self._async_fetch_update()
 
     def turn_on(self, **kwargs) -> None:
-        success: bool = self._handle_port_switch_on_off(turn_on=True)
+        success: bool = await self._async_handle_port_switch_on_off(turn_on=True)
         if success is True:
             self._is_on = True
             self._last_toggle_timestamp = time.time()
@@ -160,7 +163,7 @@ class FritzBoxPortSwitch(SwitchDevice):
             _LOGGER.error('An error occurred while turning on fritzbox_tools Guest wifi switch.')
 
     def turn_off(self, **kwargs) -> None:
-        success: bool = self._handle_port_switch_on_off(turn_on=False)
+        success: bool = await self._async_handle_port_switch_on_off(turn_on=False)
         if success is True:
             self._is_on = False
             self._last_toggle_timestamp = time.time()
@@ -168,7 +171,7 @@ class FritzBoxPortSwitch(SwitchDevice):
             self._is_on = True
             _LOGGER.error('An error occurred while turning off fritzbox_tools Guest wifi switch.')
 
-    def _handle_port_switch_on_off(self, turn_on: bool) -> bool:
+    async def _async_handle_port_switch_on_off(self, turn_on: bool) -> bool:
         # pylint: disable=import-error
         from fritzconnection.fritzconnection import ServiceError, ActionError, AuthorizationError
         new_state = '1' if turn_on else '0'
@@ -236,7 +239,23 @@ class FritzBoxProfileSwitch(SwitchDevice):
     def available(self) -> bool:
         return self._is_available
 
-    def update(self):
+    async def _async_fetch_update(self):
+        await self.fritzbox_tools.async_update_profiles()
+        try:
+            devices = self.fritzbox_tools.profile_switch.get_devices()
+            for device in devices:
+                self.device = device if device["name"] == self.device["name"] else self.device
+            self.profiles = self.fritzbox_tools.profile_switch.get_profiles()
+            if self.device["profile"] == self.id_off:
+                self._is_on = False
+            else:
+                self._is_on = True  # TODO: Decide on default behaviour
+            self._is_available = True
+        except:
+            _LOGGER.error('Could not get state of profile switch')  # TODO: get detailed error
+            self._is_available = False
+
+    async def async_update(self):
         if self._last_toggle_timestamp is not None \
                 and time.time() < self._last_toggle_timestamp + self._update_grace_period:
             # We skip update for 5 seconds after toggling the switch
@@ -245,25 +264,10 @@ class FritzBoxProfileSwitch(SwitchDevice):
                 self._update_grace_period
             ))
         else:
-            _LOGGER.debug('Updating profile switch state...')
-            # Update state from device
-            self.fritzbox_tools.update_profiles()
-            try:
-                devices = self.fritzbox_tools.profile_switch.get_devices()
-                for device in devices:
-                    self.device = device if device["name"] == self.device["name"] else self.device
-                self.profiles = self.fritzbox_tools.profile_switch.get_profiles()
-                if self.device["profile"] == self.id_off:
-                    self._is_on = False
-                else:
-                    self._is_on = True  # TODO: Decide on default behaviour
-                self._is_available = True
-            except:
-                _LOGGER.error('Could not get state of profile switch')  # TODO: get detailed error
-                self._is_available = False
+            await self._async_fetch_update()
 
-    def turn_on(self, **kwargs) -> None:
-        success: bool = self._handle_profile_switch_on_off(turn_on=True)
+    async def async_turn_on(self, **kwargs) -> None:
+        success: bool = await self._async_handle_profile_switch_on_off(turn_on=True)
         if success is True:
             self._is_on = True
             self._last_toggle_timestamp = time.time()
@@ -271,8 +275,8 @@ class FritzBoxProfileSwitch(SwitchDevice):
             self._is_on = False
             _LOGGER.error("An error occurred while turning on fritzbox_tools Guest wifi switch.")
 
-    def turn_off(self, **kwargs) -> None:
-        success: bool = self._handle_profile_switch_on_off(turn_on=False)
+    async def async_turn_off(self, **kwargs) -> None:
+        success: bool = await self._async_handle_profile_switch_on_off(turn_on=False)
         if success is True:
             self._is_on = False
             self._last_toggle_timestamp = time.time()
@@ -280,7 +284,7 @@ class FritzBoxProfileSwitch(SwitchDevice):
             self._is_on = True
             _LOGGER.error("An error occurred while turning off fritzbox_tools Guest wifi switch.")
 
-    def _handle_profile_switch_on_off(self, turn_on: bool) -> bool:
+    async def _async_handle_profile_switch_on_off(self, turn_on: bool) -> bool:
         # pylint: disable=import-error
         if turn_on:
             state = [[self.device['id1'], self.id_on]]
@@ -318,7 +322,21 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
     def available(self) -> bool:
         return self._is_available
 
-    def update(self):
+    async def _async_fetch_update(self):
+        from fritzconnection.fritzconnection import AuthorizationError
+        try:
+            status = self.fritzbox_tools.connection.call_action('WLANConfiguration:3', 'GetInfo')['NewStatus']
+            self._is_on = True if status == 'Up' else False
+            self._is_available = True
+        except AuthorizationError:
+            _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log '
+                          'into the web interface.')
+            self._is_available = False
+        except Exception:
+            _LOGGER.error('Could not get Guest Wifi state', exc_info=True)
+            self._is_available = False
+
+    async def async_update(self):
         if self._last_toggle_timestamp is not None \
                 and time.time() < self._last_toggle_timestamp + self._update_grace_period:
             # We skip update for 5 seconds after toggling the switch
@@ -327,21 +345,10 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
         else:
             _LOGGER.debug('Updating guest wifi switch state...')
             # Update state from device
-            from fritzconnection.fritzconnection import AuthorizationError
-            try:
-                status = self.fritzbox_tools.connection.call_action('WLANConfiguration:3', 'GetInfo')['NewStatus']
-                self._is_on = True if status == 'Up' else False
-                self._is_available = True
-            except AuthorizationError:
-                _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log '
-                              'into the web interface.')
-                self._is_available = False
-            except Exception:
-                _LOGGER.error('Could not get Guest Wifi state', exc_info=True)
-                self._is_available = False
+            await self._async_fetch_update()
 
-    def turn_on(self, **kwargs) -> None:
-        success: bool = self._handle_guestwifi_turn_on_off(turn_on=True)
+    async def async_turn_on(self, **kwargs) -> None:
+        success: bool = await self._handle_guestwifi_turn_on_off(turn_on=True)
         if success is True:
             self._is_on = True
             self._last_toggle_timestamp = time.time()
@@ -349,8 +356,8 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
             self._is_on = False
             _LOGGER.error('An error occurred while turning on fritzbox_tools Guest wifi switch.')
 
-    def turn_off(self, **kwargs) -> None:
-        success: bool = self._handle_guestwifi_turn_on_off(turn_on=False)
+    async def async_turn_off(self, **kwargs) -> None:
+        success: bool = await self._handle_guestwifi_turn_on_off(turn_on=False)
         if success is True:
             self._is_on = False
             self._last_toggle_timestamp = time.time()
@@ -358,7 +365,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
             self._is_on = True
             _LOGGER.error('An error occurred while turning off fritzbox_tools Guest wifi switch.')
 
-    def _handle_guestwifi_turn_on_off(self, turn_on: bool) -> bool:
+    async def _async_handle_guestwifi_turn_on_off(self, turn_on: bool) -> bool:
         # pylint: disable=import-error
         from fritzconnection.fritzconnection import ServiceError, ActionError, AuthorizationError
         new_state = '1' if turn_on else '0'

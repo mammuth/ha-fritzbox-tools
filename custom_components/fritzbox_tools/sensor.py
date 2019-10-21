@@ -11,7 +11,7 @@ _LOGGER = logging.getLogger(__name__)
 SCAN_INTERVAL = timedelta(seconds=60)
 
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(hass, config, add_entities, discovery_info=None):
     _LOGGER.debug('Setting up sensors')
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
 
@@ -44,8 +44,7 @@ class FritzBoxConnectivitySensor(BinarySensorDevice):
     def device_state_attributes(self) -> dict:
         return self._attributes
 
-    def update(self) -> None:
-        _LOGGER.debug('Updating Connectivity sensor...')
+    async def _async_fetch_update(self):
         self._is_on = True
         try:
             status = self.fritzbox_tools.fritzstatus
@@ -56,3 +55,7 @@ class FritzBoxConnectivitySensor(BinarySensorDevice):
         except Exception:
             _LOGGER.error('Error getting the state from the FRITZ!Box', exc_info=True)
             self._is_available = False
+
+    async def async_update(self) -> None:
+        _LOGGER.debug('Updating Connectivity sensor...')
+        await self._async_fetch_update()

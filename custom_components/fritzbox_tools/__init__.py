@@ -1,5 +1,6 @@
 import logging
 import time
+import asyncio
 from homeassistant.helpers import discovery
 
 DOMAIN = 'fritzbox_tools'
@@ -13,7 +14,7 @@ DATA_FRITZ_TOOLS_INSTANCE = 'fritzbox_tools_instance'
 _LOGGER = logging.getLogger(__name__)
 
 
-def setup(hass, config):
+async def async_setup(hass, config):
     _LOGGER.debug('Setting up fritzbox_tools component')
     host = config[DOMAIN].get('host', '169.254.1.1')
     port = config[DOMAIN].get('port', 49000)
@@ -44,7 +45,7 @@ def setup(hass, config):
 
     # Load the other platforms like switch
     for domain in SUPPORTED_DOMAINS:
-        discovery.load_platform(hass, domain, DOMAIN, {}, config)
+        await discovery.async_load_platform(hass, domain, DOMAIN, {}, config)
 
     return True
 
@@ -69,12 +70,12 @@ class FritzBoxTools(object):
         self.profile_last_updated = time.time()
         self.device_list = device_list
 
-    def update_profiles(self):
+    async def async_update_profiles(self):
         if time.time() > self.profile_last_updated + 5:
             # do not update profiles too often (takes too long...)!
-            self.profile_switch.fetch_profiles()
-            self.profile_switch.fetch_devices()
-            self.profile_switch.fetch_device_profiles()
+            await asyncio.coroutine(self.profile_switch.fetch_profiles)()
+            await asyncio.coroutine(self.profile_switch.fetch_devices)()
+            await asyncio.coroutine(self.profile_switch.fetch_device_profiles)()
             self.profile_last_updated = time.time()
 
     def service_reconnect_fritzbox(self, call) -> None:
