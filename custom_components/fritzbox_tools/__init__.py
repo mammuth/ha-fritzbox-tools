@@ -41,7 +41,7 @@ async def async_setup(hass, config):
 
     hass.data.setdefault(DOMAIN, {})[DATA_FRITZ_TOOLS_INSTANCE] = fritz_tools
 
-    hass.services.register(DOMAIN, 'reconnect', fritz_tools.service_reconnect_fritzbox)
+    hass.services.async_register(DOMAIN, 'reconnect', fritz_tools.service_reconnect_fritzbox)
 
     # Load the other platforms like switch
     for domain in SUPPORTED_DOMAINS:
@@ -62,7 +62,8 @@ class FritzBoxTools(object):
             user=username,
             password=password
         )
-        self.profile_switch = FritzProfileSwitch("http://"+host, username, password)
+        if profile_on is not None:
+            self.profile_switch = FritzProfileSwitch("http://"+host, username, password)
         self.fritzstatus = fc.FritzStatus(fc=self.connection)
         self.ha_ip = ha_ip
         self.profile_on = profile_on

@@ -1,4 +1,4 @@
-async def async_updateimport logging
+import logging
 from typing import List  # noqa
 from datetime import timedelta
 import time
@@ -153,7 +153,7 @@ class FritzBoxPortSwitch(SwitchDevice):
             # Update state from device
             await self._async_fetch_update()
 
-    def turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, **kwargs) -> None:
         success: bool = await self._async_handle_port_switch_on_off(turn_on=True)
         if success is True:
             self._is_on = True
@@ -162,7 +162,7 @@ class FritzBoxPortSwitch(SwitchDevice):
             self._is_on = False
             _LOGGER.error('An error occurred while turning on fritzbox_tools Guest wifi switch.')
 
-    def turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs) -> None:
         success: bool = await self._async_handle_port_switch_on_off(turn_on=False)
         if success is True:
             self._is_on = False
@@ -348,7 +348,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
             await self._async_fetch_update()
 
     async def async_turn_on(self, **kwargs) -> None:
-        success: bool = await self._handle_guestwifi_turn_on_off(turn_on=True)
+        success: bool = await self._async_handle_guestwifi_turn_on_off(turn_on=True)
         if success is True:
             self._is_on = True
             self._last_toggle_timestamp = time.time()
@@ -357,7 +357,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
             _LOGGER.error('An error occurred while turning on fritzbox_tools Guest wifi switch.')
 
     async def async_turn_off(self, **kwargs) -> None:
-        success: bool = await self._handle_guestwifi_turn_on_off(turn_on=False)
+        success: bool = await self._async_handle_guestwifi_turn_on_off(turn_on=False)
         if success is True:
             self._is_on = False
             self._last_toggle_timestamp = time.time()

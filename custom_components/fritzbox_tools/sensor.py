@@ -1,6 +1,7 @@
 import logging
 from datetime import timedelta
 from collections import defaultdict
+import asyncio
 
 from homeassistant.components.binary_sensor import BinarySensorDevice, ENTITY_ID_FORMAT
 
