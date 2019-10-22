@@ -2,8 +2,35 @@ import logging
 import time
 from homeassistant.helpers import discovery
 
+from homeassistant.const import (
+    CONF_DEVICES,
+    CONF_HOST,
+    CONF_PASSWORD,
+    CONF_USERNAME,
+    CONF_PORT
+)
+
+import voluptuous as vol
+import homeassistant.helpers.config_validation as cv
+
 DOMAIN = 'fritzbox_tools'
 SUPPORTED_DOMAINS = ['switch', 'sensor']
+
+CONF_PROFILE_ON = 'profile_on'
+CONF_PROFILE_OFF = 'profile_off'
+CONF_HOMEASSISTANT_IP = 'homeassistant_ip'
+
+DEFAULT_PROFILE_OFF = 'Gesperrt'
+DEFAULT_HOST = '192.168.178.1' #set to fritzbox default
+DEFAULT_PORT = 49000 #set to fritzbox default
+DEFAULT_USERNAME = '' #set to fritzbox default?!
+DEFAULT_PROFILE_ON = None
+DEFAULT_DEVICES = None
+DEFAULT_HOMEASSISTANT_IP = None
+
+SERVICE_RECONNECT = 'reconnect'
+
+CONF_HOMEASSISTANT_IP
 
 REQUIREMENTS = ['fritzconnection==0.8.4', 'fritz-switch-profiles==1.0.0']
 
@@ -12,20 +39,35 @@ DATA_FRITZ_TOOLS_INSTANCE = 'fritzbox_tools_instance'
 
 _LOGGER = logging.getLogger(__name__)
 
+CONFIG_SCHEMA = vol.Schema(
+    {
+        DOMAIN: vol.Schema(
+            {
+                vol.Optional(CONF_HOST): cv.string,
+                vol.Optional(CONF_PORT): cv.port,
+                vol.Optional(CONF_USERNAME): cv.string, # Does it work with empty username? else set Required
+                vol.Required(CONF_PASSWORD): cv.string,
+                vol.Optional(CONF_HOMEASSISTANT_IP): cv.string,
+                vol.Optional(CONF_DEVICES): vol.All(cv.ensure_list, [cv.string]),
+                vol.Optional(CONF_PROFILE_ON): cv.string,
+                vol.Optional(CONF_PROFILE_OFF): cv.string,
+            }
+        )
+    },
+    extra=vol.ALLOW_EXTRA,
+)
+
 
 def setup(hass, config):
     _LOGGER.debug('Setting up fritzbox_tools component')
-    host = config[DOMAIN].get('host', '169.254.1.1')
-    port = config[DOMAIN].get('port', 49000)
-    username = config[DOMAIN].get('username', '')
-    password = config[DOMAIN].get('password', None)
-    ha_ip = config[DOMAIN].get('homeassistant_ip', None)
-    profile_off = config[DOMAIN].get('profile_off', 'Gesperrt')
-    profile_on = config[DOMAIN].get('profile_on', None)
-    device_list = config[DOMAIN].get('device_list', None)
-
-    if not password:
-        raise ValueError('Password is not set in configuration')
+    host = config[DOMAIN].get(CONF_HOST, DEFAULT_HOST)
+    port = config[DOMAIN].get(CONF_PORT, DEFAULT_PORT)
+    username = config[DOMAIN].get(CONF_USERNAME, DEFAULT_USERNAME)
+    password = config[DOMAIN].get(CONF_PASSWORD)
+    ha_ip = config[DOMAIN].get(CONF_HOMEASSISTANT_IP, DEFAULT_HOMEASSISTANT_IP)
+    profile_off = config[DOMAIN].get(CONF_PROFILE_OFF, DEFAULT_PROFILE_OFF)
+    profile_on = config[DOMAIN].get(CONF_PROFILE_ON, DEFAULT_PROFILE_ON)
+    device_list = config[DOMAIN].get(CONF_DEVICES, DEFAULT_DEVICES)
 
     fritz_tools = FritzBoxTools(
         host=host,
@@ -40,7 +82,7 @@ def setup(hass, config):
 
     hass.data.setdefault(DOMAIN, {})[DATA_FRITZ_TOOLS_INSTANCE] = fritz_tools
 
-    hass.services.register(DOMAIN, 'reconnect', fritz_tools.service_reconnect_fritzbox)
+    hass.services.register(DOMAIN, SERVICE_RECONNECT, fritz_tools.service_reconnect_fritzbox)
 
     # Load the other platforms like switch
     for domain in SUPPORTED_DOMAINS:
