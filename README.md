@@ -36,7 +36,7 @@ fritzbox_tools:
   homeassistant_ip: "192.168.178.42"  # Optional. Needed if you want to control port forwardings for the device running Home Assistant
   profile_on: "Standard"  # Optional. Needed if you want to switch between device profiles ("Zugangsprofile")
   profile_off: "Gesperrt"  # Optional. Needed if you want to switch between device profiles ("Zugangsprofile")
-  device_list: # Optional. If you don't want to expose a profile switch for just some of your network devices
+  devices: # Optional. If you don't want to expose a profile switch for just some of your network devices
     - "Helens-iPhone"
     - "Aarons-MacBook-Air"
     - "..."
