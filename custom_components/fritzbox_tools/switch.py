@@ -1,3 +1,4 @@
+"""Switches for AVM Fritz!Box functions"""
 import logging
 from typing import List  # noqa
 from datetime import timedelta

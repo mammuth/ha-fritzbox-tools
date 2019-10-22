@@ -1,4 +1,6 @@
+"""Support for AVM Fritz!Box functions"""
 import logging
+
 import time
 from homeassistant.helpers import discovery
 
