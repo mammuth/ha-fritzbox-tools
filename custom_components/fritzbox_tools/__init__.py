@@ -2,6 +2,7 @@
 import logging
 
 import time
+import asyncio
 from homeassistant.helpers import discovery
 
 from homeassistant.const import (
@@ -60,7 +61,7 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 
-def setup(hass, config):
+async def async_setup(hass, config):
     _LOGGER.debug('Setting up fritzbox_tools component')
     host = config[DOMAIN].get(CONF_HOST, DEFAULT_HOST)
     port = config[DOMAIN].get(CONF_PORT, DEFAULT_PORT)
@@ -84,11 +85,12 @@ def setup(hass, config):
 
     hass.data.setdefault(DOMAIN, {})[DATA_FRITZ_TOOLS_INSTANCE] = fritz_tools
 
-    hass.services.register(DOMAIN, SERVICE_RECONNECT, fritz_tools.service_reconnect_fritzbox)
+    hass.services.async_register(DOMAIN, SERVICE_RECONNECT, fritz_tools.service_reconnect_fritzbox)
+
 
     # Load the other platforms like switch
     for domain in SUPPORTED_DOMAINS:
-        discovery.load_platform(hass, domain, DOMAIN, {}, config)
+        await discovery.async_load_platform(hass, domain, DOMAIN, {}, config)
 
     return True
 
@@ -105,7 +107,10 @@ class FritzBoxTools(object):
             user=username,
             password=password
         )
-        self.profile_switch = FritzProfileSwitch('http://'+host, username, password)
+
+        if profile_on is not None:
+            self.profile_switch = FritzProfileSwitch('http://'+host, username, password)
+            
         self.fritzstatus = fc.FritzStatus(fc=self.connection)
         self.ha_ip = ha_ip
         self.profile_on = profile_on
@@ -113,12 +118,12 @@ class FritzBoxTools(object):
         self.profile_last_updated = time.time()
         self.device_list = device_list
 
-    def update_profiles(self):
+    async def async_update_profiles(self):
         if time.time() > self.profile_last_updated + 5:
             # do not update profiles too often (takes too long...)!
-            self.profile_switch.fetch_profiles()
-            self.profile_switch.fetch_devices()
-            self.profile_switch.fetch_device_profiles()
+            await asyncio.coroutine(self.profile_switch.fetch_profiles)()
+            await asyncio.coroutine(self.profile_switch.fetch_devices)()
+            await asyncio.coroutine(self.profile_switch.fetch_device_profiles)()
             self.profile_last_updated = time.time()
 
     def service_reconnect_fritzbox(self, call) -> None:
