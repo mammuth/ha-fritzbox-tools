@@ -87,8 +87,9 @@ class FritzBoxPortSwitch(SwitchDevice):
         self.connection_type = connection_type
         self.port_mapping: dict = port_mapping  # dict in the format as it comes from fritzconnection. eg: {'NewRemoteHost': '0.0.0.0', 'NewExternalPort': 22, 'NewProtocol': 'TCP', 'NewInternalPort': 22, 'NewInternalClient': '192.168.178.31', 'NewEnabled': '0', 'NewPortMappingDescription': 'Beast SSH ', 'NewLeaseDuration': 0}  # noqa
 
-        self._name = f'Port forward {port_mapping['NewPortMappingDescription']}'
-        id = f'fritzbox_portforward_{slugify(port_mapping['NewPortMappingDescription']}'
+        description = port_mapping['NewPortMappingDescription']
+        self._name = f'Port forward {description}'
+        id = f'fritzbox_portforward_{slugify(description}'
         self.entity_id = ENTITY_ID_FORMAT.format(id)
 
         self._attributes = defaultdict(str)
@@ -206,8 +207,9 @@ class FritzBoxProfileSwitch(SwitchDevice):
         except:
             _LOGGER.error('profile_on or profile_off does not match any profiles in your fritzbox')
 
-        self._name = f'Device Profile {self.device['name']}'
-        id = f'fritzbox_profile_{self.device['name']}'
+        name = self.device['name']
+        self._name = f'Device Profile {name}'
+        id = f'fritzbox_profile_{name}'
         self.entity_id = ENTITY_ID_FORMAT.format(slugify(id))
 
         if self.device['profile'] == self.id_off:
