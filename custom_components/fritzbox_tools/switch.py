@@ -89,7 +89,7 @@ class FritzBoxPortSwitch(SwitchDevice):
 
         description = port_mapping['NewPortMappingDescription']
         self._name = f'Port forward {description}'
-        id = f'fritzbox_portforward_{slugify(description}'
+        id = f'fritzbox_portforward_{slugify(description)}'
         self.entity_id = ENTITY_ID_FORMAT.format(id)
 
         self._attributes = defaultdict(str)
