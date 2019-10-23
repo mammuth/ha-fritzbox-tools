@@ -24,9 +24,9 @@ CONF_PROFILE_OFF = 'profile_off'
 CONF_HOMEASSISTANT_IP = 'homeassistant_ip'
 
 DEFAULT_PROFILE_OFF = 'Gesperrt'
-DEFAULT_HOST = '192.168.178.1' #set to fritzbox default
-DEFAULT_PORT = 49000 #set to fritzbox default
-DEFAULT_USERNAME = '' #set to fritzbox default?!
+DEFAULT_HOST = '192.168.178.1'  # set to fritzbox default
+DEFAULT_PORT = 49000            # set to fritzbox default
+DEFAULT_USERNAME = ''           # set to fritzbox default?!
 DEFAULT_PROFILE_ON = None
 DEFAULT_DEVICES = None
 DEFAULT_HOMEASSISTANT_IP = None
@@ -48,7 +48,7 @@ CONFIG_SCHEMA = vol.Schema(
             {
                 vol.Optional(CONF_HOST): cv.string,
                 vol.Optional(CONF_PORT): cv.port,
-                vol.Optional(CONF_USERNAME): cv.string, # Does it work with empty username? else set Required
+                vol.Optional(CONF_USERNAME): cv.string,  # Does it work with empty username? else set Required
                 vol.Required(CONF_PASSWORD): cv.string,
                 vol.Optional(CONF_HOMEASSISTANT_IP): cv.string,
                 vol.Optional(CONF_DEVICES): vol.All(cv.ensure_list, [cv.string]),
@@ -87,7 +87,6 @@ async def async_setup(hass, config):
 
     hass.services.async_register(DOMAIN, SERVICE_RECONNECT, fritz_tools.service_reconnect_fritzbox)
 
-
     # Load the other platforms like switch
     for domain in SUPPORTED_DOMAINS:
         await discovery.async_load_platform(hass, domain, DOMAIN, {}, config)
@@ -110,7 +109,7 @@ class FritzBoxTools(object):
 
         if profile_on is not None:
             self.profile_switch = FritzProfileSwitch('http://'+host, username, password)
-            
+
         self.fritzstatus = fc.FritzStatus(fc=self.connection)
         self.ha_ip = ha_ip
         self.profile_on = profile_on
