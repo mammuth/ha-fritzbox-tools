@@ -64,7 +64,6 @@ async def async_setup_platform(hass, config, add_entities, discovery_info=None):
             errs = ', '.join(duplicated_hostnames)
             _LOGGER.error(f'You have multiple devices with the hostname {errs} in your network. '
                           'There will be no profile switches created for these.')
-            )
 
         # add device switches
         for device in devices:
