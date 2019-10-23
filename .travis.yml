@@ -10,4 +10,4 @@ install:
   - pip install flake8
 
 script:
-  - git diff --name-only HEAD...$TRAVIS_BRANCH | flake8 --diff .
+  - git diff master...$TRAVIS_BRANCH | flake8 --diff .
