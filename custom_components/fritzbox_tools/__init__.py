@@ -82,3 +82,13 @@ class FritzBoxTools(object):
     def service_reconnect_fritzbox(self, call) -> None:
         _LOGGER.info('Reconnecting the fritzbox.')
         self.connection.reconnect()
+
+    async def is_ok(self):
+        try:
+            _ = self.connection.call_action(
+                'Layer3Forwarding:1',
+                'GetDefaultConnectionService'
+                )['NewDefaultConnectionService']
+            return True
+        except AuthorizationError:
+            return False
