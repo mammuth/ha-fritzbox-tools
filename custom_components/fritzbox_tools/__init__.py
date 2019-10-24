@@ -33,10 +33,7 @@ DEFAULT_HOMEASSISTANT_IP = None
 
 SERVICE_RECONNECT = 'reconnect'
 
-CONF_HOMEASSISTANT_IP
-
 REQUIREMENTS = ['fritzconnection==0.8.4', 'fritz-switch-profiles==1.0.0']
-
 
 DATA_FRITZ_TOOLS_INSTANCE = 'fritzbox_tools_instance'
 
