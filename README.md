@@ -66,7 +66,7 @@ Requirements:
 
 The profile switches will be exposed as switches in your HA installation (search for `fritzbox_profile` in your entity page to find the IDs). If the switch is on `profile_on` is activated (or any other profile besides `profile_off`), if switch is off `profile_off` is activated.
 
-Note: **due to the underlying library, the update routine is not the fastest. This might result in warnings. **
+Note: **due to the underlying library, the update routine is not the fastest. This might result in warnings.**
 
 ## Example Automations and Scripts
 **Script: Reconnect / get new IP**
