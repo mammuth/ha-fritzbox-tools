@@ -34,7 +34,7 @@ If you're running on a manual HA install on eg. Debian or your own Docker setup,
 ```yaml
 fritzbox_tools:
   host: "192.168.178.1"  # required
-  username: "home-assistant"  # optional
+  username: "home-assistant"  # required (create one at `System > FRITZ!Box Benutzer` on your router)
   password: "yourfritzboxpassword"  # required
   homeassistant_ip: "192.168.178.42"  # Optional. Needed if you want to control port forwardings for the device running Home Assistant
   profile_on: "Standard"  # Optional. Needed if you want to switch between device profiles ("Zugangsprofile")
