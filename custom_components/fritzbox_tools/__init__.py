@@ -26,7 +26,6 @@ CONF_HOMEASSISTANT_IP = 'homeassistant_ip'
 DEFAULT_PROFILE_OFF = 'Gesperrt'
 DEFAULT_HOST = '192.168.178.1'  # set to fritzbox default
 DEFAULT_PORT = 49000            # set to fritzbox default
-DEFAULT_USERNAME = ''           # set to fritzbox default?!
 DEFAULT_PROFILE_ON = None
 DEFAULT_DEVICES = None
 DEFAULT_HOMEASSISTANT_IP = None
@@ -48,7 +47,7 @@ CONFIG_SCHEMA = vol.Schema(
             {
                 vol.Optional(CONF_HOST): cv.string,
                 vol.Optional(CONF_PORT): cv.port,
-                vol.Optional(CONF_USERNAME): cv.string,  # Does it work with empty username? else set Required
+                vol.Required(CONF_USERNAME): cv.string, 
                 vol.Required(CONF_PASSWORD): cv.string,
                 vol.Optional(CONF_HOMEASSISTANT_IP): cv.string,
                 vol.Optional(CONF_DEVICES): vol.All(cv.ensure_list, [cv.string]),
@@ -65,7 +64,7 @@ async def async_setup(hass, config):
     _LOGGER.debug('Setting up fritzbox_tools component')
     host = config[DOMAIN].get(CONF_HOST, DEFAULT_HOST)
     port = config[DOMAIN].get(CONF_PORT, DEFAULT_PORT)
-    username = config[DOMAIN].get(CONF_USERNAME, DEFAULT_USERNAME)
+    username = config[DOMAIN].get(CONF_USERNAME)
     password = config[DOMAIN].get(CONF_PASSWORD)
     ha_ip = config[DOMAIN].get(CONF_HOMEASSISTANT_IP, DEFAULT_HOMEASSISTANT_IP)
     profile_off = config[DOMAIN].get(CONF_PROFILE_OFF, DEFAULT_PROFILE_OFF)
