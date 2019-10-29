@@ -25,6 +25,9 @@ The custom component is available via [HACS](https://github.com/custom-component
 
 If you want to install the custom commponent manually, add the folder `fritzbox_tools/` to `YOUR_CONFIG_DIR/custom_components/`.
 
+If you're running on a manual HA install on eg. Debian or your own Docker setup, make sure to install the **system requirements** for `fritzconnection` (the library which is used by this component):
+- `sudo apt-get install libxslt-dev`
+
 ## Configuration
 
 `configuration.yml`:
