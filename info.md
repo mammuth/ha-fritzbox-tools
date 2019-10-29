@@ -20,7 +20,7 @@ This custom component allows you to get more out of your FRITZ!Box
 ```yaml
 fritzbox_tools:
   host: "192.168.178.1"
-  username: "home-assistant"  # Skip if you don't have a user
+  username: "home-assistant"  # create one at `System > FRITZ!Box Benutzer` on your router
   password: "yourfritzboxpassword"
 ```
 
