@@ -1,3 +1,4 @@
+"""AVM Fritz!Box connectivitiy sensor"""
 import logging
 from datetime import timedelta
 from collections import defaultdict

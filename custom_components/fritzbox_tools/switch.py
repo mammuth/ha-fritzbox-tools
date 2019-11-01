@@ -1,3 +1,4 @@
+"""Switches for AVM Fritz!Box functions"""
 import logging
 from typing import List  # noqa
 from datetime import timedelta
@@ -60,9 +61,9 @@ async def async_setup_platform(hass, config, add_entities, discovery_info=None):
         hostname_count = Counter([device['name'] for device in devices])
         duplicated_hostnames = [name for name, occurence in hostname_count.items() if occurence > 1]
         if len(duplicated_hostnames) > 0:
-            _LOGGER.error('You have multiple devices with the hostname {} in your network. '
-                          'There will be no profile switches created for these.'.format(', '.join(duplicated_hostnames))
-            )
+            errs = ', '.join(duplicated_hostnames)
+            _LOGGER.error(f'You have multiple devices with the hostname {errs} in your network. '
+                          'There will be no profile switches created for these.')
 
         # add device switches
         for device in devices:
@@ -86,12 +87,9 @@ class FritzBoxPortSwitch(SwitchDevice):
         self.connection_type = connection_type
         self.port_mapping: dict = port_mapping  # dict in the format as it comes from fritzconnection. eg: {'NewRemoteHost': '0.0.0.0', 'NewExternalPort': 22, 'NewProtocol': 'TCP', 'NewInternalPort': 22, 'NewInternalClient': '192.168.178.31', 'NewEnabled': '0', 'NewPortMappingDescription': 'Beast SSH ', 'NewLeaseDuration': 0}  # noqa
 
-        self._name = "Port forward {}".format(
-            port_mapping["NewPortMappingDescription"]
-        )
-        id = "fritzbox_portforward_{}".format(
-            slugify(port_mapping["NewPortMappingDescription"])
-        )
+        description = port_mapping['NewPortMappingDescription']
+        self._name = f'Port forward {description}'
+        id = f'fritzbox_portforward_{slugify(description)}'
         self.entity_id = ENTITY_ID_FORMAT.format(id)
 
         self._attributes = defaultdict(str)
@@ -206,14 +204,15 @@ class FritzBoxProfileSwitch(SwitchDevice):
                 self.id_on = self.profiles[i]['id']
         try:
             self.id_off, self.id_on
-        except:
-            _LOGGER.error("profile_on or profile_off does not match any profiles in your fritzbox")
+        except NameError:
+            _LOGGER.error('profile_on or profile_off does not match any profiles in your fritzbox')
 
-        self._name = "Device Profile {}".format(self.device["name"])
-        id = "fritzbox_profile_{}".format(self.device["name"])
+        name = self.device['name']
+        self._name = f'Device Profile {name}'
+        id = f'fritzbox_profile_{name}'
         self.entity_id = ENTITY_ID_FORMAT.format(slugify(id))
 
-        if self.device["profile"] == self.id_off:
+        if self.device['profile'] == self.id_off:
             self._is_on = False
         else:
             self._is_on = True  # TODO: Decide on default behaviour
@@ -244,9 +243,9 @@ class FritzBoxProfileSwitch(SwitchDevice):
         try:
             devices = self.fritzbox_tools.profile_switch.get_devices()
             for device in devices:
-                self.device = device if device["name"] == self.device["name"] else self.device
+                self.device = device if device['name'] == self.device['name'] else self.device
             self.profiles = self.fritzbox_tools.profile_switch.get_profiles()
-            if self.device["profile"] == self.id_off:
+            if self.device['profile'] == self.id_off:
                 self._is_on = False
             else:
                 self._is_on = True  # TODO: Decide on default behaviour
@@ -273,7 +272,7 @@ class FritzBoxProfileSwitch(SwitchDevice):
             self._last_toggle_timestamp = time.time()
         else:
             self._is_on = False
-            _LOGGER.error("An error occurred while turning on fritzbox_tools Guest wifi switch.")
+            _LOGGER.error('An error occurred while turning on fritzbox_tools Guest wifi switch.')
 
     async def async_turn_off(self, **kwargs) -> None:
         success: bool = await self._async_handle_profile_switch_on_off(turn_on=False)
@@ -282,7 +281,7 @@ class FritzBoxProfileSwitch(SwitchDevice):
             self._last_toggle_timestamp = time.time()
         else:
             self._is_on = True
-            _LOGGER.error("An error occurred while turning off fritzbox_tools Guest wifi switch.")
+            _LOGGER.error('An error occurred while turning off fritzbox_tools Guest wifi switch.')
 
     async def _async_handle_profile_switch_on_off(self, turn_on: bool) -> bool:
         # pylint: disable=import-error
@@ -300,11 +299,11 @@ class FritzBoxProfileSwitch(SwitchDevice):
 
 
 class FritzBoxGuestWifiSwitch(SwitchDevice):
-    """Defines a fritzbox_tools Home switch."""
+    """Defines a fritzbox_tools Guest Wifi switch."""
 
     name = 'FRITZ!Box Guest Wifi'
     icon = 'mdi:wifi'
-    entity_id = ENTITY_ID_FORMAT.format("fritzbox_guestwifi")
+    entity_id = ENTITY_ID_FORMAT.format('fritzbox_guestwifi')
     _update_grace_period = 5  # seconds
 
     def __init__(self, fritzbox_tools):
