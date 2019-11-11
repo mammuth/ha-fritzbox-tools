@@ -1,38 +1,22 @@
 """Support for AVM Fritz!Box functions"""
-import logging
-
-import time
 import asyncio
-from homeassistant.helpers import discovery
-from homeassistant.helpers.typing import ConfigType, HomeAssistantType
-from homeassistant import config_entries
-
-from homeassistant.const import (
-    CONF_DEVICES,
-    CONF_HOST,
-    CONF_PASSWORD,
-    CONF_USERNAME,
-    CONF_PORT,
-    CONF_VERIFY_SSL
-)
-
-from const import (
-    DOMAIN,
-    SUPPORTED_DOMAINS,
-    CONF_PROFILE_ON,
-    CONF_PROFILE_OFF,
-    CONF_HOMEASSISTANT_IP,
-    DEFAULT_PROFILE_OFF,
-    DEFAULT_HOST,
-    DEFAULT_PORT,
-    DEFAULT_PROFILE_ON,
-    DEFAULT_DEVICES,
-    DEFAULT_HOMEASSISTANT_IP,
-    SERVICE_RECONNECT,
-)
+import logging
+import time
 
 import voluptuous as vol
+
 import homeassistant.helpers.config_validation as cv
+from homeassistant import config_entries
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import (CONF_DEVICES, CONF_HOST, CONF_PASSWORD,
+                                 CONF_PORT, CONF_USERNAME, CONF_VERIFY_SSL)
+from homeassistant.helpers import discovery
+from homeassistant.helpers.typing import ConfigType, HomeAssistantType
+
+from .const import (CONF_HOMEASSISTANT_IP, CONF_PROFILE_OFF, CONF_PROFILE_ON,
+                    DEFAULT_DEVICES, DEFAULT_HOMEASSISTANT_IP, DEFAULT_HOST,
+                    DEFAULT_PORT, DEFAULT_PROFILE_OFF, DEFAULT_PROFILE_ON,
+                    DOMAIN, SERVICE_RECONNECT, SUPPORTED_DOMAINS)
 
 REQUIREMENTS = ['fritzconnection==0.8.4', 'fritz-switch-profiles==1.0.0']
 
@@ -65,13 +49,13 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
             hass.config_entries.flow.async_init(
                 DOMAIN,
                 context={"source": config_entries.SOURCE_IMPORT},
-                data=config[DOMAIN].items(),
+                data=config[DOMAIN],
             )
         )
 
     return True
 
-async def async_setup_entry(hass: HomeAssistantType, ConfigEntry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool:
     """Setup fritzboxtools from config entry"""
     _LOGGER.debug('Setting up fritzbox_tools component')
     host = entry.data.get(CONF_HOST, DEFAULT_HOST)
@@ -153,6 +137,7 @@ class FritzBoxTools(object):
         self.connection.reconnect()
 
     async def is_ok(self):
+        from fritzconnection.fritzconnection import AuthorizationError
         try:
             _ = self.connection.call_action(
                 'Layer3Forwarding:1',

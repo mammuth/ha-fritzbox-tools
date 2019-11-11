@@ -1,12 +1,15 @@
 """AVM Fritz!Box connectivitiy sensor"""
-import logging
-from datetime import timedelta
-from collections import defaultdict
 import asyncio
+import logging
+from collections import defaultdict
+from datetime import timedelta
 
-from homeassistant.components.binary_sensor import BinarySensorDevice, ENTITY_ID_FORMAT
+from homeassistant.components.binary_sensor import (ENTITY_ID_FORMAT,
+                                                    BinarySensorDevice)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.typing import HomeAssistantType
 
-from . import DOMAIN, DATA_FRITZ_TOOLS_INSTANCE
+from . import DATA_FRITZ_TOOLS_INSTANCE, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 

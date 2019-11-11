@@ -2,8 +2,6 @@
 import logging
 
 import voluptuous as vol
-import homeassistant.helpers.config_validation as cv
-
 from homeassistant import config_entries
 from .const import (
     DOMAIN,
@@ -13,6 +11,7 @@ from .const import (
     DEFAULT_HOST,
     DEFAULT_PORT,
     DEFAULT_PROFILE_OFF,
+    DEFAULT_DEVICES,
 )
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import (
@@ -20,8 +19,9 @@ from homeassistant.const import (
     CONF_PASSWORD,
     CONF_USERNAME,
     CONF_PORT,
+    CONF_DEVICES,
 )
-from . import DATA_FRITZ_TOOLS_INSTANCE
+from . import FritzBoxTools, CONFIG_SCHEMA
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 {
                     vol.Optional(CONF_HOST, default=DEFAULT_HOST): str,
                     vol.Optional(CONF_PORT, default=DEFAULT_PORT): vol.Coerce(int),
-                    vol.Optional(CONF_USERNAME): str,  # Does it work with empty username? else set Required
+                    vol.Required(CONF_USERNAME): str,
                     vol.Required(CONF_PASSWORD): str,
                     vol.Optional(CONF_HOMEASSISTANT_IP): str,
                     vol.Optional(CONF_PROFILE_ON): str,
@@ -77,7 +77,11 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             host=host,
             port=port,
             username=username,
-            password=password
+            password=password,
+            profile_on=None,
+            profile_off=None,
+            device_list=None,
+            ha_ip=None
         )
         success = await fritz_tools.is_ok()
 
@@ -86,7 +90,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             return await self._show_setup_form(errors)
 
         return self.async_create_entry(
-            title=user_input[CONF_HOST],
+            title="Fritzbox Tools",
             data={
                 CONF_HOST: user_input.get(CONF_HOST),
                 CONF_PASSWORD: user_input.get(CONF_PASSWORD),
@@ -94,6 +98,18 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 CONF_PROFILE_ON: user_input.get(CONF_PROFILE_ON),
                 CONF_PROFILE_OFF: user_input.get(CONF_PROFILE_OFF),
                 CONF_USERNAME: user_input.get(CONF_USERNAME),
-                CONF_HOMEASSISTANT_IP: user_input.get(CONF_HOMEASSISTANT_IP)
+                CONF_HOMEASSISTANT_IP: user_input.get(CONF_HOMEASSISTANT_IP),
+                CONF_DEVICES: user_input.get(CONF_DEVICES)
             },
         )
+    async def async_step_import(self, import_config):
+        """Import a fritzbox_tools as a config entry.
+
+        This flow is triggered by `async_setup` for configured devices.
+        This flow is also triggered by `async_step_discovery`.
+
+        This will execute for any complete
+        configuration.
+        """
+        self.import_schema = CONFIG_SCHEMA
+        return await self.async_step_user(user_input=import_config)

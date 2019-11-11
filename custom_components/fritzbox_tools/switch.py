@@ -8,6 +8,8 @@ import asyncio
 from collections import Counter, defaultdict
 
 from homeassistant.components.switch import SwitchDevice, ENTITY_ID_FORMAT
+from homeassistant.helpers.typing import HomeAssistantType
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.util import slugify
 
 from . import DOMAIN, DATA_FRITZ_TOOLS_INSTANCE
@@ -204,7 +206,7 @@ class FritzBoxProfileSwitch(SwitchDevice):
                 self.id_on = self.profiles[i]['id']
         try:
             self.id_off, self.id_on
-        except NameError:
+        except AttributeError:
             _LOGGER.error('profile_on or profile_off does not match any profiles in your fritzbox')
 
         name = self.device['name']

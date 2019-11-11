@@ -1,0 +1,27 @@
+{
+    "config": {
+        "title": "Fritzbox Tools",
+        "step": {
+            "user": {
+                "title": "Setup Fritzbox Tools",
+                "description": "minimum needed: username, password",
+                "data": {
+                    "host": "Host",
+                    "password": "Password",
+                    "port": "Port",
+                    "username": "Username",
+                    "homeassistant_ip": "IP of homeassistant device",
+                    "profile_on": "Device Profile On",
+                    "profile_off": "Device Profile Off"
+                }
+            }
+        },
+        "error": {
+            "connection_error": "Failed to connect to Fritz!Box."
+        },
+        "abort": {
+            "single_instance_allowed": "Only a single configuration of Fritzbox Tools is allowed.",
+            "existing_instance_updated": "Updated existing configuration."
+        }
+    }
+}
