@@ -25,18 +25,21 @@ The custom component is available via [HACS](https://github.com/custom-component
 
 If you want to install the custom commponent manually, add the folder `fritzbox_tools/` to `YOUR_CONFIG_DIR/custom_components/`.
 
+If you're running on a manual HA install on eg. Debian or your own Docker setup, make sure to install the **system requirements** for `fritzconnection` (the library which is used by this component):
+- `sudo apt-get install libxslt-dev`
+
 ## Configuration
 
 `configuration.yml`:
 ```yaml
 fritzbox_tools:
   host: "192.168.178.1"  # required
-  username: "home-assistant"  # optional
+  username: "home-assistant"  # required (create one at `System > FRITZ!Box Benutzer` on your router)
   password: "yourfritzboxpassword"  # required
   homeassistant_ip: "192.168.178.42"  # Optional. Needed if you want to control port forwardings for the device running Home Assistant
   profile_on: "Standard"  # Optional. Needed if you want to switch between device profiles ("Zugangsprofile")
   profile_off: "Gesperrt"  # Optional. Needed if you want to switch between device profiles ("Zugangsprofile")
-  device_list: # Optional. If you don't want to expose a profile switch for just some of your network devices
+  devices: # Optional. If you don't want to expose a profile switch for just some of your network devices
     - "Helens-iPhone"
     - "Aarons-MacBook-Air"
     - "..."
@@ -66,7 +69,7 @@ Requirements:
 
 The profile switches will be exposed as switches in your HA installation (search for `fritzbox_profile` in your entity page to find the IDs). If the switch is on `profile_on` is activated (or any other profile besides `profile_off`), if switch is off `profile_off` is activated.
 
-Note: **due to the underlying library, the update routine is not the fastest. This might result in warnings. **
+Note: **due to the underlying library, the update routine is not the fastest. This might result in warnings.**
 
 ## Example Automations and Scripts
 **Script: Reconnect / get new IP**
