@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 SCAN_INTERVAL = timedelta(seconds=30)  # update of profile switch takes too long
 
 
-async def async_setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry, async_add_entities) -> None:
     _LOGGER.debug('Setting up switches')
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
 
@@ -72,7 +72,7 @@ async def async_setup_platform(hass, config, add_entities, discovery_info=None):
                 if fritzbox_tools.device_list is None or device['name'] in fritzbox_tools.device_list:
                     profile_switches.append(FritzBoxProfileSwitch(fritzbox_tools, device))
 
-    add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools)] + port_switches + profile_switches, True)
+    async_add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools)] + port_switches + profile_switches, True)
     return True
 
 

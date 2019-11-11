@@ -4,33 +4,35 @@ import logging
 import time
 import asyncio
 from homeassistant.helpers import discovery
+from homeassistant.helpers.typing import ConfigType, HomeAssistantType
+from homeassistant import config_entries
 
 from homeassistant.const import (
     CONF_DEVICES,
     CONF_HOST,
     CONF_PASSWORD,
     CONF_USERNAME,
-    CONF_PORT
+    CONF_PORT,
+    CONF_VERIFY_SSL
+)
+
+from const import (
+    DOMAIN,
+    SUPPORTED_DOMAINS,
+    CONF_PROFILE_ON,
+    CONF_PROFILE_OFF,
+    CONF_HOMEASSISTANT_IP,
+    DEFAULT_PROFILE_OFF,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+    DEFAULT_PROFILE_ON,
+    DEFAULT_DEVICES,
+    DEFAULT_HOMEASSISTANT_IP,
+    SERVICE_RECONNECT,
 )
 
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
-
-DOMAIN = 'fritzbox_tools'
-SUPPORTED_DOMAINS = ['switch', 'sensor']
-
-CONF_PROFILE_ON = 'profile_on'
-CONF_PROFILE_OFF = 'profile_off'
-CONF_HOMEASSISTANT_IP = 'homeassistant_ip'
-
-DEFAULT_PROFILE_OFF = 'Gesperrt'
-DEFAULT_HOST = '192.168.178.1'  # set to fritzbox default
-DEFAULT_PORT = 49000            # set to fritzbox default
-DEFAULT_PROFILE_ON = None
-DEFAULT_DEVICES = None
-DEFAULT_HOMEASSISTANT_IP = None
-
-SERVICE_RECONNECT = 'reconnect'
 
 REQUIREMENTS = ['fritzconnection==0.8.4', 'fritz-switch-profiles==1.0.0']
 
@@ -44,7 +46,7 @@ CONFIG_SCHEMA = vol.Schema(
             {
                 vol.Optional(CONF_HOST): cv.string,
                 vol.Optional(CONF_PORT): cv.port,
-                vol.Required(CONF_USERNAME): cv.string, 
+                vol.Required(CONF_USERNAME): cv.string,
                 vol.Required(CONF_PASSWORD): cv.string,
                 vol.Optional(CONF_HOMEASSISTANT_IP): cv.string,
                 vol.Optional(CONF_DEVICES): vol.All(cv.ensure_list, [cv.string]),
@@ -56,17 +58,30 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
+async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
+    """Setup fritzboxtools component"""
+    if not hass.config_entries.async_entries(DOMAIN) and DOMAIN in config:
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": config_entries.SOURCE_IMPORT},
+                data=config[DOMAIN].items(),
+            )
+        )
 
-async def async_setup(hass, config):
+    return True
+
+async def async_setup_entry(hass: HomeAssistantType, ConfigEntry: ConfigEntry) -> bool:
+    """Setup fritzboxtools from config entry"""
     _LOGGER.debug('Setting up fritzbox_tools component')
-    host = config[DOMAIN].get(CONF_HOST, DEFAULT_HOST)
-    port = config[DOMAIN].get(CONF_PORT, DEFAULT_PORT)
-    username = config[DOMAIN].get(CONF_USERNAME)
-    password = config[DOMAIN].get(CONF_PASSWORD)
-    ha_ip = config[DOMAIN].get(CONF_HOMEASSISTANT_IP, DEFAULT_HOMEASSISTANT_IP)
-    profile_off = config[DOMAIN].get(CONF_PROFILE_OFF, DEFAULT_PROFILE_OFF)
-    profile_on = config[DOMAIN].get(CONF_PROFILE_ON, DEFAULT_PROFILE_ON)
-    device_list = config[DOMAIN].get(CONF_DEVICES, DEFAULT_DEVICES)
+    host = entry.data.get(CONF_HOST, DEFAULT_HOST)
+    port = entry.data.get(CONF_PORT, DEFAULT_PORT)
+    username = entry.data.get(CONF_USERNAME)
+    password = entry.data.get(CONF_PASSWORD)
+    ha_ip = entry.data.get(CONF_HOMEASSISTANT_IP, DEFAULT_HOMEASSISTANT_IP)
+    profile_off = entry.data.get(CONF_PROFILE_OFF, DEFAULT_PROFILE_OFF)
+    profile_on = entry.data.get(CONF_PROFILE_ON, DEFAULT_PROFILE_ON)
+    device_list = entry.data.get(CONF_DEVICES, DEFAULT_DEVICES)
 
     fritz_tools = FritzBoxTools(
         host=host,
@@ -85,10 +100,22 @@ async def async_setup(hass, config):
 
     # Load the other platforms like switch
     for domain in SUPPORTED_DOMAINS:
-        await discovery.async_load_platform(hass, domain, DOMAIN, {}, config)
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, domain)
+        )
 
     return True
 
+async def async_unload_entry(hass: HomeAssistantType, entry: ConfigType) -> bool:
+    """Unload fritzboxtools config entry."""
+    hass.services.async_remove(DOMAIN, SERVICE_RECONNECT)
+
+    for domain in SUPPORTED_DOMAINS:
+        await hass.config_entries.async_forward_entry_unload(entry, domain)
+
+    del hass.data[DOMAIN]
+
+    return True
 
 class FritzBoxTools(object):
 

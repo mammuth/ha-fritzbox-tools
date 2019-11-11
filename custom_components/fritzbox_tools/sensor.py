@@ -12,12 +12,12 @@ _LOGGER = logging.getLogger(__name__)
 
 SCAN_INTERVAL = timedelta(seconds=60)
 
+async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry, async_add_entities) -> None:
 
-async def async_setup_platform(hass, config, add_entities, discovery_info=None):
     _LOGGER.debug('Setting up sensors')
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
 
-    add_entities([FritzBoxConnectivitySensor(fritzbox_tools)], True)
+    async_add_entities([FritzBoxConnectivitySensor(fritzbox_tools)], True)
     return True
 
 

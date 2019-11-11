@@ -68,8 +68,18 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
 
         errors = {}
 
-        fritzbox_tools = self.hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
-        success = await fritzbox_tools.is_ok()
+        host = user_input.get(CONF_HOST, DEFAULT_HOST)
+        port = user_input.get(CONF_PORT, DEFAULT_PORT)
+        username = user_input.get(CONF_USERNAME)
+        password = user_input.get(CONF_PASSWORD)
+
+        fritz_tools = FritzBoxTools(
+            host=host,
+            port=port,
+            username=username,
+            password=password
+        )
+        success = await fritz_tools.is_ok()
 
         if not success:
             errors["base"] = "connection_error"
@@ -78,9 +88,9 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         return self.async_create_entry(
             title=user_input[CONF_HOST],
             data={
-                CONF_HOST: user_input[CONF_HOST],
+                CONF_HOST: user_input.get(CONF_HOST),
                 CONF_PASSWORD: user_input.get(CONF_PASSWORD),
-                CONF_PORT: user_input[CONF_PORT],
+                CONF_PORT: user_input.get(CONF_PORT),
                 CONF_PROFILE_ON: user_input.get(CONF_PROFILE_ON),
                 CONF_PROFILE_OFF: user_input.get(CONF_PROFILE_OFF),
                 CONF_USERNAME: user_input.get(CONF_USERNAME),
