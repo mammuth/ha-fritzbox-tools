@@ -10,9 +10,9 @@
                     "password": "Password",
                     "port": "Port",
                     "username": "Username",
-                    "homeassistant_ip": "IP of homeassistant device",  # TODO: find better
-                    "profile_on": "Device Profile On",  # TODO: find better
-                    "profile_off": "Device Profile Off"  # TODO: find better
+                    "homeassistant_ip": "IP of homeassistant device",
+                    "profile_on": "Device Profile On",
+                    "profile_off": "Device Profile Off"
                 }
             }
         },
