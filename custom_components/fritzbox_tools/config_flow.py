@@ -1,4 +1,4 @@
-"""Config flow to configure the fritzbox_tools integration."""
+"""Config flow to configure the FRITZ!Box Tools integration."""
 import logging
 
 import voluptuous as vol
@@ -29,7 +29,7 @@ _LOGGER = logging.getLogger(__name__)
 
 @config_entries.HANDLERS.register(DOMAIN)
 class FritzBoxToolsFlowHandler(ConfigFlow):
-    """Handle a Fritzbox Tools config flow."""
+    """Handle a FRITZ!Box Tools config flow."""
 
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
@@ -37,7 +37,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
     _hassio_discovery = None
 
     def __init__(self):
-        """Initialize Fritzbox Tools flow."""
+        """Initialize FRITZ!Box Tools flow."""
         pass
 
     async def _show_setup_form(self, errors=None):
@@ -90,7 +90,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             return await self._show_setup_form(errors)
 
         return self.async_create_entry(
-            title="Fritzbox Tools",
+            title="FRITZ!Box Tools",
             data={
                 CONF_HOST: user_input.get(CONF_HOST),
                 CONF_PASSWORD: user_input.get(CONF_PASSWORD),
@@ -103,7 +103,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             },
         )
     async def async_step_import(self, import_config):
-        """Import a fritzbox_tools as a config entry.
+        """Import a FRITZ!Box Tools as a config entry.
 
         This flow is triggered by `async_setup` for configured devices.
         This flow is also triggered by `async_step_discovery`.

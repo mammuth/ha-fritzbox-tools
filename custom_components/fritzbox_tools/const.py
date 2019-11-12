@@ -1,4 +1,4 @@
-"""Constants for the AdGuard Home integration."""
+"""Constants for the FRITZ!Box Tools integration."""
 
 DOMAIN = 'fritzbox_tools'
 SUPPORTED_DOMAINS = ['switch', 'sensor']

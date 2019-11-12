@@ -43,7 +43,7 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
-    """Setup fritzboxtools component"""
+    """Setup FRITZ!Box Tools component"""
     if not hass.config_entries.async_entries(DOMAIN) and DOMAIN in config:
         hass.async_create_task(
             hass.config_entries.flow.async_init(
@@ -57,7 +57,7 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool:
     """Setup fritzboxtools from config entry"""
-    _LOGGER.debug('Setting up fritzbox_tools component')
+    _LOGGER.debug('Setting up FRITZ!Box Tools component')
     host = entry.data.get(CONF_HOST, DEFAULT_HOST)
     port = entry.data.get(CONF_PORT, DEFAULT_PORT)
     username = entry.data.get(CONF_USERNAME)
@@ -91,7 +91,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
     return True
 
 async def async_unload_entry(hass: HomeAssistantType, entry: ConfigType) -> bool:
-    """Unload fritzboxtools config entry."""
+    """Unload FRITZ!Box Tools config entry."""
     hass.services.async_remove(DOMAIN, SERVICE_RECONNECT)
 
     for domain in SUPPORTED_DOMAINS:

@@ -79,7 +79,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry, async_a
 
 
 class FritzBoxPortSwitch(SwitchDevice):
-    """Defines a fritzbox_tools PortForward switch."""
+    """Defines a FRITZ!Box Tools PortForward switch."""
 
     icon = 'mdi:lan'
     _update_grace_period = 5  # seconds
@@ -189,7 +189,7 @@ class FritzBoxPortSwitch(SwitchDevice):
 
 
 class FritzBoxProfileSwitch(SwitchDevice):
-    """Defines a fritzbox_tools DeviceProfile switch."""
+    """Defines a FRITZ!Box Tools DeviceProfile switch."""
     # Note: Update routine is very slow. SCAN_INTERVAL should be set to higher values!
 
     icon = 'mdi:lan'  # TODO: search for a better one
@@ -301,7 +301,7 @@ class FritzBoxProfileSwitch(SwitchDevice):
 
 
 class FritzBoxGuestWifiSwitch(SwitchDevice):
-    """Defines a fritzbox_tools Guest Wifi switch."""
+    """Defines a FRITZ!Box Tools Guest Wifi switch."""
 
     name = 'FRITZ!Box Guest Wifi'
     icon = 'mdi:wifi'
