@@ -107,6 +107,14 @@ class FritzBoxPortSwitch(SwitchDevice):
         return self._name
 
     @property
+    def unique_id(self):
+        return f"{self.fritzbox_tools.unique_id}-{self.entity_id}"
+
+    @property
+    def device_info(self):
+        return self.fritzbox_tools.device_info
+
+    @property
     def is_on(self) -> bool:
         return self._is_on
 
@@ -233,6 +241,14 @@ class FritzBoxProfileSwitch(SwitchDevice):
         return self._name
 
     @property
+    def unique_id(self):
+        return f"{self.fritzbox_tools.unique_id}-{self.entity_id}"
+
+    @property
+    def device_info(self):
+        return self.fritzbox_tools.device_info
+
+    @property
     def is_on(self) -> bool:
         return self._is_on
 
@@ -314,6 +330,14 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
         self._last_toggle_timestamp = None
         self._available = True  # set to False if an error happend during toggling the switch
         super().__init__()
+
+    @property
+    def unique_id(self):
+        return f"{self.fritzbox_tools.unique_id}-{self.entity_id}"
+
+    @property
+    def device_info(self):
+        return self.fritzbox_tools.device_info
 
     @property
     def is_on(self) -> bool:

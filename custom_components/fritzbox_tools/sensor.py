@@ -42,6 +42,14 @@ class FritzBoxConnectivitySensor(BinarySensorDevice):
         return self._is_on
 
     @property
+    def unique_id(self):
+        return self.fritzbox_tools.unique_id
+
+    @property
+    def device_info(self):
+        return self.fritzbox_tools.device_info
+
+    @property
     def available(self) -> bool:
         return self._is_available
 

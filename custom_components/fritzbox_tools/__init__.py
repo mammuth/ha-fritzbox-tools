@@ -146,3 +146,22 @@ class FritzBoxTools(object):
             return True
         except AuthorizationError:
             return False
+
+    @property
+    def unique_id(self):
+        serial = self.connection.call_action("DeviceInfo:1","GetInfo")["NewSerialNumber"]
+        return serial
+
+    @property
+    def device_info(self):
+        info = self.connection.call_action("DeviceInfo:1","GetInfo")
+        return {
+            'identifiers': {
+                # Serial numbers are unique identifiers within a specific domain
+                (DOMAIN, self.unique_id)
+            },
+            'name': info.get("NewProductClass"),
+            'manufacturer': "AVM",
+            'model': info.get("NewModelName"),
+            'sw_version': info.get("NewSoftwareVersion")
+        }

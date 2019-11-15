@@ -1,9 +1,9 @@
 {
     "config": {
-        "title": "Fritzbox Tools",
+        "title": "Fritz!Box Tools",
         "step": {
             "user": {
-                "title": "Setup Fritzbox Tools",
+                "title": "Setup Fritz!Box Tools",
                 "description": "minimum needed: username, password",
                 "data": {
                     "host": "Host",
@@ -20,7 +20,7 @@
             "connection_error": "Failed to connect to Fritz!Box."
         },
         "abort": {
-            "single_instance_allowed": "Only a single configuration of Fritzbox Tools is allowed.",
+            "single_instance_allowed": "Only a single configuration of Fritz!Box Tools is allowed.",
             "existing_instance_updated": "Updated existing configuration."
         }
     }
