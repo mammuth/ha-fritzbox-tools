@@ -9,8 +9,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (CONF_DEVICES, CONF_HOST, CONF_PASSWORD,
-                                 CONF_PORT, CONF_USERNAME, CONF_VERIFY_SSL)
-from homeassistant.helpers import discovery
+                                 CONF_PORT, CONF_USERNAME)
 from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 
 from .const import (CONF_HOMEASSISTANT_IP, CONF_PROFILE_OFF, CONF_PROFILE_ON,
@@ -42,6 +41,7 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
+
 async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
     """Setup FRITZ!Box Tools component"""
     if not hass.config_entries.async_entries(DOMAIN) and DOMAIN in config:
@@ -54,6 +54,7 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
         )
 
     return True
+
 
 async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool:
     """Setup fritzboxtools from config entry"""
@@ -80,7 +81,8 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
 
     hass.data.setdefault(DOMAIN, {})[DATA_FRITZ_TOOLS_INSTANCE] = fritz_tools
 
-    hass.services.async_register(DOMAIN, SERVICE_RECONNECT, fritz_tools.service_reconnect_fritzbox)
+    hass.services.async_register(
+        DOMAIN, SERVICE_RECONNECT, fritz_tools.service_reconnect_fritzbox)
 
     # Load the other platforms like switch
     for domain in SUPPORTED_DOMAINS:
@@ -89,6 +91,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         )
 
     return True
+
 
 async def async_unload_entry(hass: HomeAssistantType, entry: ConfigType) -> bool:
     """Unload FRITZ!Box Tools config entry."""
@@ -100,6 +103,7 @@ async def async_unload_entry(hass: HomeAssistantType, entry: ConfigType) -> bool
     del hass.data[DOMAIN]
 
     return True
+
 
 class FritzBoxTools(object):
 
@@ -115,7 +119,8 @@ class FritzBoxTools(object):
         )
 
         if profile_on is not None:
-            self.profile_switch = FritzProfileSwitch('http://'+host, username, password)
+            self.profile_switch = FritzProfileSwitch(
+                'http://' + host, username, password)
 
         self.fritzstatus = fc.FritzStatus(fc=self.connection)
         self.ha_ip = ha_ip
@@ -137,24 +142,27 @@ class FritzBoxTools(object):
         self.connection.reconnect()
 
     async def is_ok(self):
+        # TODO for future: do more of the async_setup_entry checks right here
+
         from fritzconnection.fritzconnection import AuthorizationError
         try:
             _ = self.connection.call_action(
                 'Layer3Forwarding:1',
                 'GetDefaultConnectionService'
-                )['NewDefaultConnectionService']
-            return True
+            )['NewDefaultConnectionService']
+            return True, ""
         except AuthorizationError:
-            return False
+            return False, "connection_error"
 
     @property
     def unique_id(self):
-        serial = self.connection.call_action("DeviceInfo:1","GetInfo")["NewSerialNumber"]
+        serial = self.connection.call_action("DeviceInfo:1", "GetInfo")[
+            "NewSerialNumber"]
         return serial
 
     @property
     def device_info(self):
-        info = self.connection.call_action("DeviceInfo:1","GetInfo")
+        info = self.connection.call_action("DeviceInfo:1", "GetInfo")
         return {
             'identifiers': {
                 # Serial numbers are unique identifiers within a specific domain

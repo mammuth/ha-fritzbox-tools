@@ -3,7 +3,6 @@ import logging
 from typing import List  # noqa
 from datetime import timedelta
 import time
-import asyncio
 
 from collections import Counter, defaultdict
 
@@ -48,9 +47,9 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry, async_a
                     port_switches.append(
                         FritzBoxPortSwitch(fritzbox_tools, portmap, i, connection_type)
                     )
-        except:
+        except Exception as e:
             _LOGGER.error(
-                'Port switches could not be enabled. Check if your fritzbox is able to do port forwardings!',
+                f'Port switches could not be enabled. Check if your fritzbox is able to do port forwardings!\n {e}',
                 exc_info=True
             )
 
@@ -268,8 +267,8 @@ class FritzBoxProfileSwitch(SwitchDevice):
             else:
                 self._is_on = True  # TODO: Decide on default behaviour
             self._is_available = True
-        except:
-            _LOGGER.error('Could not get state of profile switch')  # TODO: get detailed error
+        except Exception as e:
+            _LOGGER.error(f'Could not get state of profile switch\n {e}')  # TODO: get detailed error
             self._is_available = False
 
     async def async_update(self):
@@ -309,8 +308,8 @@ class FritzBoxProfileSwitch(SwitchDevice):
             state = [[self.device['id1'], self.id_off]]
         try:
             self.fritzbox_tools.profile_switch.set_profiles(state)
-        except:
-            _LOGGER.error('Home Assistant cannot call the wished service on the FRITZ!Box.', exc_info=True)
+        except Exception as e:
+            _LOGGER.error(f'Home Assistant cannot call the wished service on the FRITZ!Box.\n {e}', exc_info=True)
             return False
         else:
             return True

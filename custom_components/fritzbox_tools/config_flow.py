@@ -10,8 +10,7 @@ from .const import (
     CONF_HOMEASSISTANT_IP,
     DEFAULT_HOST,
     DEFAULT_PORT,
-    DEFAULT_PROFILE_OFF,
-    DEFAULT_DEVICES,
+    DEFAULT_PROFILE_OFF
 )
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import (
@@ -21,6 +20,7 @@ from homeassistant.const import (
     CONF_PORT,
     CONF_DEVICES,
 )
+
 from . import FritzBoxTools, CONFIG_SCHEMA
 
 
@@ -52,7 +52,8 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                     vol.Required(CONF_PASSWORD): str,
                     vol.Optional(CONF_HOMEASSISTANT_IP): str,
                     vol.Optional(CONF_PROFILE_ON): str,
-                    vol.Optional(CONF_PROFILE_OFF, default=DEFAULT_PROFILE_OFF): str
+                    vol.Optional(CONF_PROFILE_OFF, default=DEFAULT_PROFILE_OFF): str,
+                    vol.Optional(CONF_DEVICES): str
                 }
             ),
             errors=errors or {},
@@ -72,6 +73,10 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         port = user_input.get(CONF_PORT, DEFAULT_PORT)
         username = user_input.get(CONF_USERNAME)
         password = user_input.get(CONF_PASSWORD)
+        devices = user_input.get(CONF_DEVICES)
+
+        if isinstance(devices, str):
+            devices = devices.replace(' ', '').split(',')
 
         fritz_tools = FritzBoxTools(
             host=host,
@@ -80,28 +85,29 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             password=password,
             profile_on=None,
             profile_off=None,
-            device_list=None,
+            device_list=devices,
             ha_ip=None
         )
-        success = await fritz_tools.is_ok()
+        success, error = await fritz_tools.is_ok()
 
         if not success:
-            errors["base"] = "connection_error"
+            errors["base"] = error
             return await self._show_setup_form(errors)
 
         return self.async_create_entry(
             title="FRITZ!Box Tools",
             data={
-                CONF_HOST: user_input.get(CONF_HOST),
-                CONF_PASSWORD: user_input.get(CONF_PASSWORD),
-                CONF_PORT: user_input.get(CONF_PORT),
+                CONF_HOST: host,
+                CONF_PASSWORD: password,
+                CONF_PORT: port,
                 CONF_PROFILE_ON: user_input.get(CONF_PROFILE_ON),
                 CONF_PROFILE_OFF: user_input.get(CONF_PROFILE_OFF),
-                CONF_USERNAME: user_input.get(CONF_USERNAME),
+                CONF_USERNAME: username,
                 CONF_HOMEASSISTANT_IP: user_input.get(CONF_HOMEASSISTANT_IP),
-                CONF_DEVICES: user_input.get(CONF_DEVICES)
+                CONF_DEVICES: devices
             },
         )
+
     async def async_step_import(self, import_config):
         """Import a FRITZ!Box Tools as a config entry.
 

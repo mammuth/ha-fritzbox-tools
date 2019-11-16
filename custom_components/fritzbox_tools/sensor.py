@@ -1,5 +1,4 @@
 """AVM Fritz!Box connectivitiy sensor"""
-import asyncio
 import logging
 from collections import defaultdict
 from datetime import timedelta
@@ -14,6 +13,7 @@ from . import DATA_FRITZ_TOOLS_INSTANCE, DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 SCAN_INTERVAL = timedelta(seconds=60)
+
 
 async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry, async_add_entities) -> None:
 
@@ -66,7 +66,8 @@ class FritzBoxConnectivitySensor(BinarySensorDevice):
             for attr in ['modelname', 'external_ip', 'external_ipv6', 'uptime', 'str_uptime']:
                 self._attributes[attr] = getattr(status, attr)
         except Exception:
-            _LOGGER.error('Error getting the state from the FRITZ!Box', exc_info=True)
+            _LOGGER.error(
+                'Error getting the state from the FRITZ!Box', exc_info=True)
             self._is_available = False
 
     async def async_update(self) -> None:
