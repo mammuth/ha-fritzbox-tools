@@ -26,4 +26,12 @@ fritzbox_tools:
 
 Check out the [README](https://github.com/mammuth/ha-fritzbox-tools/blob/master/README.md#configuration) for a detailed documentation on how to configure this custom component
 
+
+#### Prepare your FRITZ!Box
+
+If you want to be able to control settings of the FRITZ!Box (eg. toggle device profiles, guest wifi, port forwards, ...), you need to enable two settings in the FRITZ!Box UI `Home > Network > Network Settings (Tab)` as seen in the following screenshot:
+
+![network-settings](https://user-images.githubusercontent.com/3121306/68996105-e5fe0280-0895-11ea-8b0d-1a4487ee6838.png)
+
+
 <a href="https://www.buymeacoffee.com/mammuth" target="_blank"><img src="https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
