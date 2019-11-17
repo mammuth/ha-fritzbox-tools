@@ -134,3 +134,7 @@ automation:
 - [@mammuth](http://github.com/mammuth)
 - [@AaronDavidSchneider](http://github.com/AaronDavidSchneider)
 - [@jo-me](http://github.com/jo-me)
+
+
+## Attributions
+- This project is based on [`fritzconnection`](https://github.com/kbr/fritzconnection). Thanks [@kbr](http://github.com/kbr) for the hard work.
