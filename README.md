@@ -119,6 +119,40 @@ automation:
           message: "Password: ..."
 ```
 
+**Automation: Open port 80 for the Let's Encrypt http challenge**
+
+If you're using the [Let's Encrypt Addon](https://www.home-assistant.io/addons/lets_encrypt/) you could create an automation for renewing your certificates automatically. However, the http challenge requires port 80 to be open on your router.
+
+The following automation does three things: 
+- Open port 80 on the router (the port forward needs to be created manually first)
+- Stop the [NGINX proxy addon](https://www.home-assistant.io/addons/nginx_proxy/)
+- start the Let's Encrypt addon to perform the renew
+- Close port 80
+- Start NGINX addon again
+
+
+```yaml
+- alias: 'System: LetsEncrypt certificate renewal'
+  trigger:
+  - platform: time
+    at: 05:00:00
+  action:
+  - service: switch.turn_on
+    entity_id: switch.fritzbox_portforward_http_server
+  - service: hassio.addon_stop
+    data:
+      addon: core_nginx_proxy
+  - delay: 00:00:15
+  - service: hassio.addon_restart
+    data:
+      addon: core_letsencrypt  
+  - delay: 00:03:00
+  - service: hassio.addon_start
+    data:
+      addon: core_nginx_proxy
+  - service: switch.turn_off
+    entity_id: switch.fritzbox_portforward_http_server
+```
 
 ## Exposed entities
 
