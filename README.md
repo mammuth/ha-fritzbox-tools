@@ -78,6 +78,16 @@ The profile switches will be exposed as switches in your HA installation (search
 
 Note: **due to the underlying library, the update routine is not the fastest. This might result in warnings.**
 
+
+## Exposed entities
+
+- `service.reconnect`  Reconnect to your ISP
+- `switch.fritzbox_guest_wifi`  Turns on/off guest wifi
+- `binary_sensor.fritzbox_connectivity`  online/offline depending on your internet connection
+- `switch.fritzbox_portforward_[description of your forward]` for each of your port forwards for your HA device
+- `switch.fritzbox_profile_[name of your device]` for each device in your fritzbox network
+
+
 ## Example Automations and Scripts
 **Script: Reconnect / get new IP**
 
@@ -155,13 +165,22 @@ automation:
       entity_id: switch.fritzbox_portforward_http_server
 ```
 
-## Exposed entities
+**Sensor: External IP address of your router**
+The IP addresses (v4 and v6) are available as attributes of the connectivity sensor that this component exposes.
+However, if you want to have a dedicated sensor for your external IP, you can create a template sensor like this:
 
-- `service.reconnect`  Reconnect to your ISP
-- `switch.fritzbox_guest_wifi`  Turns on/off guest wifi
-- `binary_sensor.fritzbox_connectivity`  online/offline depending on your internet connection
-- `switch.fritzbox_portforward_[description of your forward]` for each of your port forwards for your HA device
-- `switch.fritzbox_profile_[name of your device]` for each device in your fritzbox network
+```yaml
+sensors:
+  - platform: template
+    sensors:
+      external_ip:
+        friendly_name: "External IP Address"
+        entity_id: binary_sensor.fritzbox_connectivity  # only react on changes of the router connectivity sensor
+        value_template: "{{ state_attr('binary_sensor.fritzbox_connectivity', 'external_ip') }}"
+        icon_template: mdi:router-wireless
+```
+
+This will create you a sensor with the entity id `sensor.external_ip`.
 
 
 ## Contributors
