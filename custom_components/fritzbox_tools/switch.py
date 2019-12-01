@@ -311,10 +311,10 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
         self._is_on = False
         self._last_toggle_timestamp = None
         self._available = True  # set to False if an error happend during toggling the switch
-        if ('WLANConfiguration:3', 'GetInfo') not in self.fritzbox_tools.connection.actionnames:
+        if 'WLANConfiguration:3' not in self.fritzbox_tools.connection.services:
             self.network = 2 # use WLANConfiguration:2 in case of no dualband wifi
         else:
-            self.network = 3 
+            self.network = 3
 
         super().__init__()
 
