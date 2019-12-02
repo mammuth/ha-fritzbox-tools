@@ -328,6 +328,11 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
         self._is_on = False
         self._last_toggle_timestamp = None
         self._available = True  # set to False if an error happend during toggling the switch
+        if 'WLANConfiguration:3' not in self.fritzbox_tools.connection.services:
+            self.network = 2 # use WLANConfiguration:2 in case of no dualband wifi
+        else:
+            self.network = 3
+
         super().__init__()
 
     @property
@@ -349,7 +354,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
     async def _async_fetch_update(self):
         from fritzconnection.fritzconnection import AuthorizationError
         try:
-            status = self.fritzbox_tools.connection.call_action('WLANConfiguration:3', 'GetInfo')['NewStatus']
+            status = self.fritzbox_tools.connection.call_action(f'WLANConfiguration:{self.network}', 'GetInfo')['NewStatus']
             self._is_on = True if status == 'Up' else False
             self._is_available = True
         except AuthorizationError:
@@ -394,7 +399,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
         from fritzconnection.fritzconnection import ServiceError, ActionError, AuthorizationError
         new_state = '1' if turn_on else '0'
         try:
-            self.fritzbox_tools.connection.call_action('WLANConfiguration:3', 'SetEnable', NewEnable=new_state)
+            self.fritzbox_tools.connection.call_action(f'WLANConfiguration:{self.network}', 'SetEnable', NewEnable=new_state)
         except AuthorizationError:
             _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log into '
                           'the web interface.', exc_info=True)
