@@ -43,7 +43,7 @@ class FritzBoxConnectivitySensor(BinarySensorDevice):
 
     @property
     def unique_id(self):
-        return self.fritzbox_tools.unique_id
+        return f"{self.fritzbox_tools.unique_id}-{self.entity_id}"
 
     @property
     def device_info(self):

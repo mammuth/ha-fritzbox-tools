@@ -47,9 +47,9 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry, async_a
                     port_switches.append(
                         FritzBoxPortSwitch(fritzbox_tools, portmap, i, connection_type)
                     )
-        except Exception as e:
+        except Exception:
             _LOGGER.error(
-                f'Port switches could not be enabled. Check if your fritzbox is able to do port forwardings!\n {e}',
+                f'Port switches could not be enabled. Check if your fritzbox is able to do port forwardings!',
                 exc_info=True
             )
 
@@ -267,8 +267,8 @@ class FritzBoxProfileSwitch(SwitchDevice):
             else:
                 self._is_on = True  # TODO: Decide on default behaviour
             self._is_available = True
-        except Exception as e:
-            _LOGGER.error(f'Could not get state of profile switch\n {e}')  # TODO: get detailed error
+        except Exception:
+            _LOGGER.error(f'Could not get state of profile switch', exc_info=True)  # TODO: get detailed error
             self._is_available = False
 
     async def async_update(self):
@@ -308,8 +308,8 @@ class FritzBoxProfileSwitch(SwitchDevice):
             state = [[self.device['id1'], self.id_off]]
         try:
             self.fritzbox_tools.profile_switch.set_profiles(state)
-        except Exception as e:
-            _LOGGER.error(f'Home Assistant cannot call the wished service on the FRITZ!Box.\n {e}', exc_info=True)
+        except Exception:
+            _LOGGER.error(f'Home Assistant cannot call the wished service on the FRITZ!Box.', exc_info=True)
             return False
         else:
             return True
@@ -359,7 +359,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
             self._is_available = True
         except AuthorizationError:
             _LOGGER.error('Authorization Error: Please check the provided credentials and verify that you can log '
-                          'into the web interface.')
+                          'into the web interface.', exc_info=True)
             self._is_available = False
         except Exception:
             _LOGGER.error('Could not get Guest Wifi state', exc_info=True)
