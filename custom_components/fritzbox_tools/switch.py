@@ -54,7 +54,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry, async_a
             )
 
     profile_switches: List[FritzBoxProfileSwitch] = []
-    if fritzbox_tools.profile_on is not None:
+    if len(fritzbox_tools.device_list)>0:
         _LOGGER.debug('Setting up profile switches')
         devices = fritzbox_tools.profile_switch.get_devices()
 
@@ -70,7 +70,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry, async_a
         for device in devices:
             # Check for duplicated host names in the devices list.
             if device['name'] not in duplicated_hostnames:
-                if fritzbox_tools.device_list is None or device['name'] in fritzbox_tools.device_list:
+                if device['name'] in fritzbox_tools.device_list:
                     profile_switches.append(FritzBoxProfileSwitch(fritzbox_tools, device))
 
     async_add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools)] + port_switches + profile_switches, True)

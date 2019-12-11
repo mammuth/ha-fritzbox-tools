@@ -8,9 +8,11 @@ from .const import (
     CONF_PROFILE_ON,
     CONF_PROFILE_OFF,
     CONF_HOMEASSISTANT_IP,
+    DEFAULT_DEVICES,
     DEFAULT_HOST,
     DEFAULT_PORT,
-    DEFAULT_PROFILE_OFF
+    DEFAULT_PROFILE_ON,
+    DEFAULT_PROFILE_OFF,
 )
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import (
@@ -51,7 +53,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                     vol.Required(CONF_USERNAME): str,
                     vol.Required(CONF_PASSWORD): str,
                     vol.Optional(CONF_HOMEASSISTANT_IP): str,
-                    vol.Optional(CONF_PROFILE_ON): str,
+                    vol.Optional(CONF_PROFILE_ON, default=DEFAULT_PROFILE_ON): str,
                     vol.Optional(CONF_PROFILE_OFF, default=DEFAULT_PROFILE_OFF): str,
                     vol.Optional(CONF_DEVICES): str
                 }
@@ -73,7 +75,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         port = user_input.get(CONF_PORT, DEFAULT_PORT)
         username = user_input.get(CONF_USERNAME)
         password = user_input.get(CONF_PASSWORD)
-        devices = user_input.get(CONF_DEVICES)
+        devices = user_input.get(CONF_DEVICES,DEFAULT_DEVICES)
 
         if isinstance(devices, str):
             devices = devices.replace(' ', '').split(',')

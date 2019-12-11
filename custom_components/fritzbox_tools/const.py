@@ -11,8 +11,8 @@ DEFAULT_PROFILE_OFF = 'Gesperrt'
 DEFAULT_HOST = '192.168.178.1'  # set to fritzbox default
 DEFAULT_PORT = 49000            # set to fritzbox default
 DEFAULT_USERNAME = ''           # set to fritzbox default?!
-DEFAULT_PROFILE_ON = None
-DEFAULT_DEVICES = None
+DEFAULT_PROFILE_ON = 'Standard'
+DEFAULT_DEVICES = []
 DEFAULT_HOMEASSISTANT_IP = None
 
 SERVICE_RECONNECT = 'reconnect'
