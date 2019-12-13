@@ -22,7 +22,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry, async_a
     _LOGGER.debug('Setting up switches')
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
 
-    def _create_port_switch():
+    def _create_port_switches():
         if fritzbox_tools.ha_ip is not None:
             try:
                 _LOGGER.debug('Setting up port forward switches')
@@ -52,7 +52,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry, async_a
                     exc_info=True
                 )
 
-    def _create_profile_switch():
+    def _create_profile_switches():
         if len(fritzbox_tools.device_list)>0:
             _LOGGER.debug('Setting up profile switches')
             devices = fritzbox_tools.profile_switch.get_devices()
@@ -73,8 +73,8 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry, async_a
                         hass.add_job(async_add_entities, [FritzBoxProfileSwitch(fritzbox_tools, device)])
 
     async_add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools)])
-    hass.async_add_executor_job(_create_port_switch)
-    hass.async_add_executor_job(_create_profile_switch)
+    hass.async_add_executor_job(_create_port_switches)
+    hass.async_add_executor_job(_create_profile_switches)
 
     return True
 
