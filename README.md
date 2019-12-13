@@ -29,8 +29,11 @@ If you're running on a manual HA install on eg. Debian or your own Docker setup,
 - `sudo apt-get install libxslt-dev`
 
 ## Configuration
+**As Integration:**
 
-`configuration.yml`:
+Go to the `Integrations pane` on your Home Assistant instance.
+
+**Using `configuration.yml`:**
 ```yaml
 fritzbox_tools:
   host: "192.168.178.1"  # required

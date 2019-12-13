@@ -1,0 +1,28 @@
+{
+    "config": {
+        "title": "FRITZ!Box Tools",
+        "step": {
+            "user": {
+                "title": "Setup FRITZ!Box Tools",
+                "description": "Setup FRITZ!Box Tools to control your FRITZ!Box.\nMinimum needed: username, password.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
+                "data": {
+                    "host": "Host",
+                    "password": "Password",
+                    "port": "Port",
+                    "username": "Username",
+                    "homeassistant_ip": "Port forwardings: IP of homeassistant device",
+                    "profile_on": "Device profiles: Profile on",
+                    "profile_off": "Device profiles: Profile off",
+                    "devices": "Device profiles: comma seperated list of devices"
+                }
+            }
+        },
+        "error": {
+            "connection_error": "Failed to connect to FRITZ!Box. Check your username and password."
+        },
+        "abort": {
+            "single_instance_allowed": "Only a single configuration of FRITZ!Box Tools is allowed.",
+            "existing_instance_updated": "Updated existing configuration."
+        }
+    }
+}

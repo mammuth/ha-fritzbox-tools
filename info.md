@@ -16,7 +16,11 @@ This custom component allows you to get more out of your FRITZ!Box
 
 **Configuration (minimal):**
 
-`configuration.yml`:
+***As Integration:***
+
+Go to the `Integrations pane` on your Home Assistant instance.
+
+***In `configuration.yml`:***
 ```yaml
 fritzbox_tools:
   host: "192.168.178.1"
