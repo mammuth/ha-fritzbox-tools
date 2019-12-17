@@ -40,12 +40,12 @@ fritzbox_tools:
   username: "home-assistant"  # required (create one at `System > FRITZ!Box Benutzer` on your router)
   password: "yourfritzboxpassword"  # required
   homeassistant_ip: "192.168.178.42"  # Optional. Needed if you want to control port forwardings for the device running Home Assistant
-  profile_on: "Standard"  # Optional. Needed if you want to switch between device profiles ("Zugangsprofile")
-  profile_off: "Gesperrt"  # Optional. Needed if you want to switch between device profiles ("Zugangsprofile")
-  devices: # Optional. If you don't want to expose a profile switch for just some of your network devices
+  devices: # Optional. Needed if you want to control the profiles of your network devices.
     - "Helens-iPhone"
     - "Aarons-MacBook-Air"
     - "..."
+  profile_on: "Standard"  # Optional. Use if the names of your "Zugangsprofile" are different as the defaults.
+  profile_off: "Gesperrt"  # Optional.
 ```
 
 #### Prepare your FRITZ!Box
