@@ -55,7 +55,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                     vol.Optional(CONF_HOMEASSISTANT_IP): str,
                     vol.Optional(CONF_PROFILE_ON, default=DEFAULT_PROFILE_ON): str,
                     vol.Optional(CONF_PROFILE_OFF, default=DEFAULT_PROFILE_OFF): str,
-                    vol.Optional(CONF_DEVICES): str
+                    vol.Optional(CONF_DEVICES): str,
                 }
             ),
             errors=errors or {},
@@ -75,10 +75,10 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         port = user_input.get(CONF_PORT, DEFAULT_PORT)
         username = user_input.get(CONF_USERNAME)
         password = user_input.get(CONF_PASSWORD)
-        devices = user_input.get(CONF_DEVICES,DEFAULT_DEVICES)
+        devices = user_input.get(CONF_DEVICES, DEFAULT_DEVICES)
 
         if isinstance(devices, str):
-            devices = devices.replace(' ', '').split(',')
+            devices = devices.replace(" ", "").split(",")
 
         fritz_tools = FritzBoxTools(
             host=host,
@@ -88,7 +88,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             profile_on=None,
             profile_off=None,
             device_list=devices,
-            ha_ip=None
+            ha_ip=None,
         )
         success, error = await fritz_tools.is_ok()
 
@@ -106,7 +106,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 CONF_PROFILE_OFF: user_input.get(CONF_PROFILE_OFF),
                 CONF_USERNAME: username,
                 CONF_HOMEASSISTANT_IP: user_input.get(CONF_HOMEASSISTANT_IP),
-                CONF_DEVICES: devices
+                CONF_DEVICES: devices,
             },
         )
 
