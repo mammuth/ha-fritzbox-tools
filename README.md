@@ -40,12 +40,12 @@ fritzbox_tools:
   username: "home-assistant"  # required (create one at `System > FRITZ!Box Benutzer` on your router)
   password: "yourfritzboxpassword"  # required
   homeassistant_ip: "192.168.178.42"  # Optional. Needed if you want to control port forwardings for the device running Home Assistant
-  profile_on: "Standard"  # Optional. Needed if you want to switch between device profiles ("Zugangsprofile")
-  profile_off: "Gesperrt"  # Optional. Needed if you want to switch between device profiles ("Zugangsprofile")
-  devices: # Optional. If you don't want to expose a profile switch for just some of your network devices
+  devices: # Optional. Needed if you want to control the profiles of your network devices.
     - "Helens-iPhone"
     - "Aarons-MacBook-Air"
     - "..."
+  profile_on: "Standard"  # Optional. Use if the names of your "Zugangsprofile" are different as the defaults.
+  profile_off: "Gesperrt"  # Optional.
 ```
 
 #### Prepare your FRITZ!Box
@@ -73,11 +73,10 @@ Note: **Currently only port forwards for the device which is running HA are supp
 You can switch between two device profiles ("Zugangsprofile") within Home Assistant for the devices within your network.
 
 Requirements:
-- Set `profile_on` and `profile_off` (default: "Gesperrt") in the configuration of `fritzbox_tools`
-- Optionaly set `device_list` to only expose some devices.
-- On your FRITZ!Box, configure the profiles you want to be able to set for your devices.
+- Add the (FRITZ!Box) names of the devices you want to control to `device_list`.
+- Optionally set `profile_on` and `profile_off` to the names of your profiles (default: "Standard" and "Gesperrt") in the configuration of `fritzbox_tools`
 
-The profile switches will be exposed as switches in your HA installation (search for `fritzbox_profile` in your entity page to find the IDs). If the switch is on `profile_on` is activated (or any other profile besides `profile_off`), if switch is off `profile_off` is activated.
+The device profiles will be exposed as switches in your HA installation (search for `fritzbox_profile` in your entity page to find the IDs). If the switch is toggled on, the profile you specified in `profile_on` is activated, if the switch is off, `profile_off` is activated.
 
 Note: **due to the underlying library, the update routine is not the fastest. This might result in warnings.**
 
