@@ -8,6 +8,7 @@ Custom component for Home Assistant to control your FRITZ!Box
 
 - Switch between device profiles ("Zugangsprofile") for devices in your network
 - Manage port forwardings for your Home Assistant device
+- Turn on/off wifi
 - Turn on/off guest wifi
 - Reconnect your FRITZ!Box / get new IP from provider
 - Sensor for internet connectivity (with external IP and uptime attributes)
@@ -50,7 +51,7 @@ fritzbox_tools:
 
 #### Prepare your FRITZ!Box
 
-If you want to be able to control settings of the FRITZ!Box (eg. toggle device profiles, guest wifi, port forwards, ...), you need to enable two settings in the FRITZ!Box UI `Home > Network > Network Settings (Tab)` as seen in the following screenshot:
+If you want to be able to control settings of the FRITZ!Box (eg. toggle device profiles, (guest) wifi, port forwards, ...), you need to enable two settings in the FRITZ!Box UI `Home > Network > Network Settings (Tab)` as seen in the following screenshot:
 
 ![network-settings](https://user-images.githubusercontent.com/3121306/68996105-e5fe0280-0895-11ea-8b0d-1a4487ee6838.png)
 
@@ -84,7 +85,8 @@ Note: **due to the underlying library, the update routine is not the fastest. Th
 ## Exposed entities
 
 - `service.reconnect`  Reconnect to your ISP
-- `switch.fritzbox_guest_wifi`  Turns on/off guest wifi
+- `switch.fritzbox_wifi`  Turns on/off wifi
+- `switch.fritzbox_guestwifi`  Turns on/off guest wifi
 - `binary_sensor.fritzbox_connectivity`  online/offline depending on your internet connection
 - `switch.fritzbox_portforward_[description of your forward]` for each of your port forwards for your HA device
 - `switch.fritzbox_profile_[name of your device]` for each device in your fritzbox network
@@ -122,7 +124,7 @@ automation:
   - alias: "Guests Wifi Turned On -> Send Password To Phone
     trigger:
       platform: state
-      entity_id: switch.fritzbox_guest_wifi
+      entity_id: switch.fritzbox_guestwifi
       to: 'on'
     action:
       - service: notify.pushbullet_max
