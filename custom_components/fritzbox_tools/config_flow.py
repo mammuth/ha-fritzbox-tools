@@ -7,7 +7,6 @@ from .const import (
     DOMAIN,
     CONF_PROFILE_ON,
     CONF_PROFILE_OFF,
-    CONF_HOMEASSISTANT_IP,
     DEFAULT_DEVICES,
     DEFAULT_HOST,
     DEFAULT_PORT,
@@ -52,7 +51,6 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                     vol.Optional(CONF_PORT, default=DEFAULT_PORT): vol.Coerce(int),
                     vol.Required(CONF_USERNAME): str,
                     vol.Required(CONF_PASSWORD): str,
-                    vol.Optional(CONF_HOMEASSISTANT_IP): str,
                     vol.Optional(CONF_PROFILE_ON, default=DEFAULT_PROFILE_ON): str,
                     vol.Optional(CONF_PROFILE_OFF, default=DEFAULT_PROFILE_OFF): str,
                     vol.Optional(CONF_DEVICES): str,
@@ -88,7 +86,6 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             profile_on=None,
             profile_off=None,
             device_list=devices,
-            ha_ip=None,
         )
         success, error = await fritz_tools.is_ok()
 
@@ -105,7 +102,6 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 CONF_PROFILE_ON: user_input.get(CONF_PROFILE_ON),
                 CONF_PROFILE_OFF: user_input.get(CONF_PROFILE_OFF),
                 CONF_USERNAME: username,
-                CONF_HOMEASSISTANT_IP: user_input.get(CONF_HOMEASSISTANT_IP),
                 CONF_DEVICES: devices,
             },
         )
