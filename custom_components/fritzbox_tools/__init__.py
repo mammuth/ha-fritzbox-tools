@@ -141,7 +141,7 @@ class FritzBoxTools(object):
             address=host, port=port, user=username, password=password
         )
 
-        if profile_on is not None:
+        if device_list != DEFAULT_DEVICES:
             self.profile_switch = FritzProfileSwitch(
                 "http://" + host, username, password
             )
