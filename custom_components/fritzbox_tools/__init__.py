@@ -148,6 +148,11 @@ class FritzBoxTools(object):
         self.profile_last_updated = time.time()
         self.device_list = device_list
 
+        self.username = username
+        self.password = password
+        self.port = port
+        self.host = host
+
     async def async_update_profiles(self):
         if time.time() > self.profile_last_updated + 5:
             # do not update profiles too often (takes too long...)!
