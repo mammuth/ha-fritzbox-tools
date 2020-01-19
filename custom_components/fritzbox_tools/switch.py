@@ -26,10 +26,10 @@ async def async_setup_entry(
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
 
     def _create_deflection_switches():
-        number_of_deflections = fritzbox_tools.connection.call_action(
-            "X_AVM-DE_OnTel:1", "GetNumberOfDeflections"
-        )["NewNumberOfDeflections"]
-        if "X_AVM-DE_OnTel:1" in fritzbox_tools.connection.services and number_of_deflections != 0:
+        deflections_response = fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetNumberOfDeflections")
+        _LOGGER.debug(deflections_response)
+        _LOGGER.debug(fritzbox_tools.connection.services)
+        if "X_AVM-DE_OnTel1" in fritzbox_tools.connection.services and deflections_response["NewNumberOfDeflections"] != 0:
             try:
                 _LOGGER.debug("Setting up deflection switches")
                 deflections = xmltodict.parse(
@@ -60,16 +60,23 @@ async def async_setup_entry(
                 )["NewDefaultConnectionService"]
                 connection_type = connection_type[2:].replace(".", ":")
 
-                # Query port forwardings and setup a switch for each forward for the current deivce
+                # Query port forwardings and setup a switch for each forward for the current device
                 port_forwards_count: int = fritzbox_tools.connection.call_action(
                     connection_type, "GetPortMappingNumberOfEntries"
                 )["NewPortMappingNumberOfEntries"]
+                _LOGGER.debug('Number of port forwards response')
+                _LOGGER.debug(port_forwards_count)
                 for i in range(port_forwards_count):
                     portmap = fritzbox_tools.connection.call_action(
                         connection_type,
                         "GetGenericPortMappingEntry",
                         NewPortMappingIndex=i,
                     )
+                    _LOGGER.debug("Specific port forward response")
+                    _LOGGER.debug(portmap)
+
+                    _LOGGER.debug(f"Port forwards of the following device are shown: {fritzbox_tools.ha_ip}")
+
                     # We can only handle port forwards of the given device
                     if portmap["NewInternalClient"] == fritzbox_tools.ha_ip:
                         hass.add_job(
@@ -243,7 +250,7 @@ class FritzBoxPortSwitch(SwitchDevice):
         # pylint: disable=import-error
         from fritzconnection.core.exceptions import FritzSecurityError, FritzConnectionException
 
-        self.port_mapping["NewEnabled"] = turn_on
+        self.port_mapping["NewEnabled"] = "1" if turn_on else "0"
         try:
             self.fritzbox_tools.connection.call_action(
                 self.connection_type, "AddPortMapping", **self.port_mapping
@@ -320,7 +327,10 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
                 self.fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetDeflections")["NewDeflectionList"]
             )["List"][self._item]
 
-            self._is_on = self.dict_of_deflection["Enable"] is True
+            _LOGGER.debug("GetDeflections:")
+            _LOGGER.debug(self.dict_of_deflection)
+
+            self._is_on = self.dict_of_deflection["Enable"] == '1'
             self._is_available = True
 
             self._attributes["Type"] = self.dict_of_deflection["Type"]
@@ -351,7 +361,7 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
                 "Not updating switch state, because last toggle happend < 5 seconds ago"
             )
         else:
-            _LOGGER.debug("Updating port switch state...")
+            _LOGGER.debug("Updating call deflection switch state...")
             # Update state from device
             await self._async_fetch_update()
 
@@ -381,9 +391,10 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
         # pylint: disable=import-error
         from fritzconnection.core.exceptions import FritzSecurityError, FritzConnectionException
 
+        new_state = '1' if turn_on else '0'
         try:
             self.fritzbox_tools.connection.call_action(
-                "X_AVM-DE_OnTel:1","SetDeflectionEnable", NewEnable=turn_on, NewDeflectionId=self.id
+                "X_AVM-DE_OnTel:1","SetDeflectionEnable", NewEnable=new_state, NewDeflectionId=self.id
             )
         except FritzSecurityError:
             _LOGGER.error(
@@ -590,6 +601,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
             wifi_info = self.fritzbox_tools.connection.call_action(
                 f"WLANConfiguration:{self.network}", "GetInfo"
             )
+            _LOGGER.debug("Guest WiFi GetInfo:")
             _LOGGER.debug(wifi_info)
             self._is_on = True if wifi_info["NewStatus"] == "Up" else False
             self._is_available = True
