@@ -4,9 +4,8 @@
         "step": {
             "setup_additional": {
                 "title": "Setup Fritz!Box Tools - optional settings",
-                "description": "Port forwardings need IP address of homeassistant device.\n Device profiles need a list of devices.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
+                "description": "Device profiles need a list of devices.\nleave it empty if you don't need it.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
                 "data": {
-                    "homeassistant_ip": "Port forwardings: IP of homeassistant device",
                     "profile_on": "Device profiles: Profile on",
                     "profile_off": "Device profiles: Profile off",
                     "devices": "Device profiles: comma seperated list of devices"

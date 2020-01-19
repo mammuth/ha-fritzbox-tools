@@ -16,13 +16,12 @@ from homeassistant.const import (
     CONF_USERNAME,
 )
 from homeassistant.helpers.typing import ConfigType, HomeAssistantType
+from homeassistant.util import get_local_ip
 
 from .const import (
-    CONF_HOMEASSISTANT_IP,
     CONF_PROFILE_OFF,
     CONF_PROFILE_ON,
     DEFAULT_DEVICES,
-    DEFAULT_HOMEASSISTANT_IP,
     DEFAULT_HOST,
     DEFAULT_PORT,
     DEFAULT_PROFILE_OFF,
@@ -46,7 +45,6 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_PORT): cv.port,
                 vol.Required(CONF_USERNAME): cv.string,
                 vol.Required(CONF_PASSWORD): cv.string,
-                vol.Optional(CONF_HOMEASSISTANT_IP): cv.string,
                 vol.Optional(CONF_DEVICES): vol.All(cv.ensure_list, [cv.string]),
                 vol.Optional(CONF_PROFILE_ON): cv.string,
                 vol.Optional(CONF_PROFILE_OFF): cv.string,
@@ -78,7 +76,6 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
     port = entry.data.get(CONF_PORT, DEFAULT_PORT)
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
-    ha_ip = entry.data.get(CONF_HOMEASSISTANT_IP, DEFAULT_HOMEASSISTANT_IP)
     profile_off = entry.data.get(CONF_PROFILE_OFF, DEFAULT_PROFILE_OFF)
     profile_on = entry.data.get(CONF_PROFILE_ON, DEFAULT_PROFILE_ON)
     device_list = entry.data.get(CONF_DEVICES, DEFAULT_DEVICES)
@@ -88,7 +85,6 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         port=port,
         username=username,
         password=password,
-        ha_ip=ha_ip,
         profile_on=profile_on,
         profile_off=profile_off,
         device_list=device_list,
@@ -128,7 +124,6 @@ class FritzBoxTools(object):
         port,
         username,
         password,
-        ha_ip,
         profile_on,
         profile_off,
         device_list,
@@ -147,7 +142,7 @@ class FritzBoxTools(object):
             )
 
         self.fritzstatus = fc.FritzStatus(fc=self.connection)
-        self.ha_ip = ha_ip
+        self.ha_ip = get_local_ip()
         self.profile_on = profile_on
         self.profile_off = profile_off
         self.profile_last_updated = time.time()

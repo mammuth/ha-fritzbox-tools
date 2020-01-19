@@ -52,7 +52,7 @@ async def async_setup_entry(
                 )
 
     def _create_port_switches():
-        if fritzbox_tools.ha_ip is not None:
+        if fritzbox_tools.ha_ip != "127.0.0.1":
             try:
                 _LOGGER.debug("Setting up port forward switches")
                 connection_type = fritzbox_tools.connection.call_action(

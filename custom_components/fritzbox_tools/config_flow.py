@@ -7,15 +7,12 @@ from .const import (
     DOMAIN,
     CONF_PROFILE_ON,
     CONF_PROFILE_OFF,
-    CONF_HOMEASSISTANT_IP,
     DEFAULT_DEVICES,
     DEFAULT_HOST,
     DEFAULT_PORT,
     DEFAULT_PROFILE_ON,
     DEFAULT_PROFILE_OFF,
     SUPPORTED_DOMAINS,
-    DEFAULT_HOMEASSISTANT_IP,
-
 )
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import (
@@ -66,7 +63,6 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             step_id="setup_additional",
             data_schema=vol.Schema(
                 {
-                    vol.Optional(CONF_HOMEASSISTANT_IP): str,
                     vol.Optional(CONF_PROFILE_ON, default=DEFAULT_PROFILE_ON): str,
                     vol.Optional(CONF_PROFILE_OFF, default=DEFAULT_PROFILE_OFF): str,
                     vol.Optional(CONF_DEVICES): str,
@@ -98,7 +94,6 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 port=port,
                 username=username,
                 password=password,
-                ha_ip=None,
                 profile_on=None,
                 profile_off=None,
                 device_list=None
@@ -125,7 +120,6 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 CONF_PROFILE_ON: user_input.get(CONF_PROFILE_ON),
                 CONF_PROFILE_OFF: user_input.get(CONF_PROFILE_OFF),
                 CONF_USERNAME: self.fritz_tools.username,
-                CONF_HOMEASSISTANT_IP: user_input.get(CONF_HOMEASSISTANT_IP),
                 CONF_DEVICES: devices
             },
         )
@@ -161,7 +155,6 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             profile_on=None,
             profile_off=None,
             device_list=devices,
-            ha_ip=None,
         )
         success, error = await fritz_tools.is_ok()
 
@@ -177,7 +170,6 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 CONF_PROFILE_ON: user_input.get(CONF_PROFILE_ON, DEFAULT_PROFILE_ON),
                 CONF_PROFILE_OFF: user_input.get(CONF_PROFILE_OFF, DEFAULT_PROFILE_OFF),
                 CONF_USERNAME: username,
-                CONF_HOMEASSISTANT_IP: user_input.get(CONF_HOMEASSISTANT_IP, DEFAULT_HOMEASSISTANT_IP),
                 CONF_DEVICES: devices,
             },
         )
