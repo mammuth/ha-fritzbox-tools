@@ -94,7 +94,6 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 port=port,
                 username=username,
                 password=password,
-                ha_ip=None,
                 profile_on=None,
                 profile_off=None,
                 device_list=None
@@ -121,7 +120,6 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 CONF_PROFILE_ON: user_input.get(CONF_PROFILE_ON),
                 CONF_PROFILE_OFF: user_input.get(CONF_PROFILE_OFF),
                 CONF_USERNAME: self.fritz_tools.username,
-                CONF_HOMEASSISTANT_IP: user_input.get(CONF_HOMEASSISTANT_IP),
                 CONF_DEVICES: devices
             },
         )
