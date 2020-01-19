@@ -40,7 +40,6 @@ fritzbox_tools:
   host: "192.168.178.1"  # required
   username: "home-assistant"  # required (create one at `System > FRITZ!Box Benutzer` on your router)
   password: "yourfritzboxpassword"  # required
-  homeassistant_ip: "192.168.178.42"  # Optional. Needed if you want to control port forwardings for the device running Home Assistant
   devices: # Optional. Needed if you want to control the profiles of your network devices.
     - "Helens-iPhone"
     - "Aarons-MacBook-Air"
@@ -62,7 +61,6 @@ Note that the option is only visible if you turn on the "advanced view" on your 
 It's possible to enable/disable port forwardings for the device which is running Home Assistant.
 
 Requirements:
-- Set the `homeassistant_ip` in the configuration of `fritzbox_tools`
 - On your FRITZ!Box, enable the setting `Selbstständige Portfreigaben für dieses Gerät erlauben.` for the device which runs HA (s. next screenshot)
 - Only works if you have a dedicated IPv4 address (it won't work with DS-Lite)
 
