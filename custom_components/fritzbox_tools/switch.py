@@ -26,10 +26,16 @@ async def async_setup_entry(
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
 
     def _create_deflection_switches():
-        if "X_AVM-DE_OnTel:1" in fritzbox_tools.connection.services and fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1","GetNumberOfDeflections")["NewNumberOfDeflections"]!=0:
+        number_of_deflections = fritzbox_tools.connection.call_action(
+            "X_AVM-DE_OnTel:1", "GetNumberOfDeflections"
+        )["NewNumberOfDeflections"]
+        if "X_AVM-DE_OnTel:1" in fritzbox_tools.connection.services and number_of_deflections != 0:
             try:
                 _LOGGER.debug("Setting up deflection switches")
-                for item, dict_of_deflection in xmltodict.parse(fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1","GetDeflections")["NewDeflectionList"])["List"].items():
+                deflections = xmltodict.parse(
+                    fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetDeflections")["NewDeflectionList"]
+                )["List"].items()
+                for item, dict_of_deflection in deflections:
                     hass.add_job(
                         async_add_entities,
                         [
@@ -44,9 +50,6 @@ async def async_setup_entry(
                     f"Call Deflection switches could not be enabled.",
                     exc_info=True,
                 )
-
-
-
 
     def _create_port_switches():
         if fritzbox_tools.ha_ip is not None:
@@ -317,7 +320,9 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
         from fritzconnection.fritzconnection import AuthorizationError
 
         try:
-            self.dict_of_deflection = xmltodict.parse(self.fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1","GetDeflections")["NewDeflectionList"])["List"][self._item]
+            self.dict_of_deflection = xmltodict.parse(
+                self.fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetDeflections")["NewDeflectionList"]
+            )["List"][self._item]
 
             self._is_on = True if self.dict_of_deflection["Enable"] == "1" else False
             self._is_available = True
@@ -386,7 +391,9 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
 
         new_state = "1" if turn_on else "0"
         try:
-            self.fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1","SetDeflectionEnable", NewEnable=new_state, NewDeflectionId=self.id)
+            self.fritzbox_tools.connection.call_action(
+                "X_AVM-DE_OnTel:1","SetDeflectionEnable", NewEnable=new_state, NewDeflectionId=self.id
+            )
         except AuthorizationError:
             _LOGGER.error(
                 "Authorization Error: Please check the provided credentials and verify that you can log into "
