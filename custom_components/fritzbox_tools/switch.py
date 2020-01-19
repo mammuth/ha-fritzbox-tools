@@ -571,7 +571,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
         self._is_available = (
             True  # set to False if an error happend during toggling the switch
         )
-        if "WLANConfiguration:3" not in self.fritzbox_tools.connection.services:
+        if "WLANConfiguration3" not in self.fritzbox_tools.connection.services:
             self.network = 2  # use WLANConfiguration:2 in case of no dualband wifi
         else:
             self.network = 3
@@ -659,7 +659,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
 
         try:
             self.fritzbox_tools.connection.call_action(
-                f"WLANConfiguration:{self.network}", "SetEnable", NewEnable=turn_on
+                f"WLANConfiguration{self.network}", "SetEnable", NewEnable="1" if turn_on else "0"
             )
         except FritzSecurityError:
             _LOGGER.error(
