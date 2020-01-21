@@ -3,6 +3,7 @@ import logging
 from typing import List  # noqa
 from datetime import timedelta
 import time
+import xmltodict
 
 from collections import Counter, defaultdict
 
@@ -24,8 +25,34 @@ async def async_setup_entry(
     _LOGGER.debug("Setting up switches")
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
 
+    def _create_deflection_switches():
+        number_of_deflections = fritzbox_tools.connection.call_action(
+            "X_AVM-DE_OnTel:1", "GetNumberOfDeflections"
+        )["NewNumberOfDeflections"]
+        if "X_AVM-DE_OnTel:1" in fritzbox_tools.connection.services and number_of_deflections != 0:
+            try:
+                _LOGGER.debug("Setting up deflection switches")
+                deflections = xmltodict.parse(
+                    fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetDeflections")["NewDeflectionList"]
+                )["List"].items()
+                for item, dict_of_deflection in deflections:
+                    hass.add_job(
+                        async_add_entities,
+                        [
+                            FritzBoxDeflectionSwitch(
+                                fritzbox_tools, item, dict_of_deflection
+                            )
+                        ],
+                    )
+
+            except Exception:
+                _LOGGER.error(
+                    f"Call Deflection switches could not be enabled.",
+                    exc_info=True,
+                )
+
     def _create_port_switches():
-        if fritzbox_tools.ha_ip is not None:
+        if fritzbox_tools.ha_ip != "127.0.0.1":
             try:
                 _LOGGER.debug("Setting up port forward switches")
                 connection_type = fritzbox_tools.connection.call_action(
@@ -99,10 +126,11 @@ async def async_setup_entry(
                 [FritzBoxWifiSwitch(fritzbox_tools, net, networks[net])],
             )
             
-    hass.async_add_executor_job(_create_port_switches)
-    hass.async_add_executor_job(_create_profile_switches)
     hass.async_add_executor_job(_create_wifi_switches)
-
+    hass.async_add_executor_job(_create_port_switches)
+    hass.async_add_executor_job(_create_deflection_switches)
+    hass.async_add_executor_job(_create_profile_switches)
+    
     return True
 
 
@@ -250,6 +278,148 @@ class FritzBoxPortSwitch(SwitchDevice):
             return False
         else:
             return True
+
+class FritzBoxDeflectionSwitch(SwitchDevice):
+    """Defines a FRITZ!Box Tools PortForward switch."""
+
+    icon = "mdi:phone-forward"
+    _update_grace_period = 30  # seconds
+
+    def __init__(self, fritzbox_tools, item, dict_of_deflection):
+        self.fritzbox_tools = fritzbox_tools
+        self.dict_of_deflection = dict_of_deflection
+        self.id = self.dict_of_deflection["DeflectionId"]
+        self._item = item
+        self._name = f"Deflection {self.id}"
+        id = f"fritzbox_deflection_{slugify(self.id)}"
+        self.entity_id = ENTITY_ID_FORMAT.format(id)
+
+        self._attributes = defaultdict(str)
+        self._is_available = (
+            True  # set to False if an error happend during toggling the switch
+        )
+        self._is_on = True if self.dict_of_deflection["Enable"] == "1" else False
+
+        self._last_toggle_timestamp = None
+        super().__init__()
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def unique_id(self):
+        return f"{self.fritzbox_tools.unique_id}-{self.entity_id}"
+
+    @property
+    def device_info(self):
+        return self.fritzbox_tools.device_info
+
+    @property
+    def is_on(self) -> bool:
+        return self._is_on
+
+    @property
+    def available(self) -> bool:
+        return self._is_available
+
+    @property
+    def device_state_attributes(self) -> dict:
+        return self._attributes
+
+    async def _async_fetch_update(self):
+        from fritzconnection.fritzconnection import AuthorizationError
+
+        try:
+            self.dict_of_deflection = xmltodict.parse(
+                self.fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetDeflections")["NewDeflectionList"]
+            )["List"][self._item]
+
+            self._is_on = True if self.dict_of_deflection["Enable"] == "1" else False
+            self._is_available = True
+
+            self._attributes["Type"] = self.dict_of_deflection["Type"]
+            self._attributes["Number"] =  self.dict_of_deflection["Number"]
+            self._attributes["DeflectionToNumber"] =  self.dict_of_deflection["DeflectionToNumber"]
+            self._attributes["Mode"] =  self.dict_of_deflection["Mode"]
+            self._attributes["Outgoing"] =  self.dict_of_deflection["Outgoing"]
+            self._attributes["PhonebookID"] =  self.dict_of_deflection["PhonebookID"]
+
+        except AuthorizationError:
+            _LOGGER.error(
+                "Authorization Error: Please check the provided credentials and verify that you can log "
+                "into the web interface."
+            )
+            self._is_available = False  # noqa
+        except Exception:
+            _LOGGER.error("Could not get state of Port forwarding", exc_info=True)
+            self._is_available = False  # noqa
+
+    async def async_update(self):
+        if (
+            self._last_toggle_timestamp is not None
+            and time.time() < self._last_toggle_timestamp + self._update_grace_period
+        ):
+            # We skip update for 5 seconds after toggling the switch
+            # This is because the router needs some time to change the guest wifi state
+            _LOGGER.debug(
+                "Not updating switch state, because last toggle happend < 5 seconds ago"
+            )
+        else:
+            _LOGGER.debug("Updating port switch state...")
+            # Update state from device
+            await self._async_fetch_update()
+
+    async def async_turn_on(self, **kwargs) -> None:
+        success: bool = await self._async_handle_deflection_switch_on_off(turn_on=True)
+        if success is True:
+            self._is_on = True
+            self._last_toggle_timestamp = time.time()
+        else:
+            self._is_on = False
+            _LOGGER.error(
+                "An error occurred while turning on fritzbox_tools Guest wifi switch."
+            )
+
+    async def async_turn_off(self, **kwargs) -> None:
+        success: bool = await self._async_handle_deflection_switch_on_off(turn_on=False)
+        if success is True:
+            self._is_on = False
+            self._last_toggle_timestamp = time.time()
+        else:
+            self._is_on = True
+            _LOGGER.error(
+                "An error occurred while turning off fritzbox_tools Guest wifi switch."
+            )
+
+    async def _async_handle_deflection_switch_on_off(self, turn_on: bool) -> bool:
+        # pylint: disable=import-error
+        from fritzconnection.fritzconnection import (
+            ServiceError,
+            ActionError,
+            AuthorizationError,
+        )
+
+        new_state = "1" if turn_on else "0"
+        try:
+            self.fritzbox_tools.connection.call_action(
+                "X_AVM-DE_OnTel:1","SetDeflectionEnable", NewEnable=new_state, NewDeflectionId=self.id
+            )
+        except AuthorizationError:
+            _LOGGER.error(
+                "Authorization Error: Please check the provided credentials and verify that you can log into "
+                "the web interface.",
+                exc_info=True,
+            )
+        except (ServiceError, ActionError):
+            _LOGGER.error(
+                "Home Assistant cannot call the wished service on the FRITZ!Box.",
+                exc_info=True,
+            )
+            return False
+        else:
+            return True
+
 
 class FritzBoxProfileSwitch(SwitchDevice):
     """Defines a FRITZ!Box Tools DeviceProfile switch."""

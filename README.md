@@ -7,13 +7,14 @@ Custom component for Home Assistant to control your FRITZ!Box
 **Features:**
 
 - Switch between device profiles ("Zugangsprofile") for devices in your network
+- Turn on/off call deflections ("Rufumleitung")
 - Manage port forwardings for your Home Assistant device
 - Turn on/off wifi
 - Turn on/off guest wifi
 - Reconnect your FRITZ!Box / get new IP from provider
 - Sensor for internet connectivity (with external IP and uptime attributes)
 
-![image](https://user-images.githubusercontent.com/3121306/67151935-01451480-f2ce-11e9-8f32-473b412935c9.png)
+![homeassistant_fritzbox_tools](https://user-images.githubusercontent.com/3121306/72678077-cefcac00-3aa2-11ea-9abd-d4713284668e.png)
 
 
 ## Installation
@@ -30,17 +31,16 @@ If you're running on a manual HA install on eg. Debian or your own Docker setup,
 - `sudo apt-get install libxslt-dev`
 
 ## Configuration
-**As Integration:**
+**As Integration (recommended):**
 
 Go to the `Integrations pane` on your Home Assistant instance.
 
-**Using `configuration.yml`:**
+**Using `configuration.yml` (legacy):**
 ```yaml
 fritzbox_tools:
   host: "192.168.178.1"  # required
   username: "home-assistant"  # required (create one at `System > FRITZ!Box Benutzer` on your router)
   password: "yourfritzboxpassword"  # required
-  homeassistant_ip: "192.168.178.42"  # Optional. Needed if you want to control port forwardings for the device running Home Assistant
   devices: # Optional. Needed if you want to control the profiles of your network devices.
     - "Helens-iPhone"
     - "Aarons-MacBook-Air"
@@ -49,27 +49,29 @@ fritzbox_tools:
   profile_off: "Gesperrt"  # Optional.
 ```
 
-#### Prepare your FRITZ!Box
+### Prepare your FRITZ!Box
 
 If you want to be able to control settings of the FRITZ!Box (eg. toggle device profiles, (guest) wifi, port forwards, ...), you need to enable two settings in the FRITZ!Box UI `Home > Network > Network Settings (Tab)` as seen in the following screenshot:
 
 ![network-settings](https://user-images.githubusercontent.com/3121306/68996105-e5fe0280-0895-11ea-8b0d-1a4487ee6838.png)
+Note that the option is only visible if you turn on the "advanced view" on your FRITZ!Box.
 
 
-**Port forwardings**
+### Port forwardings
 
 It's possible to enable/disable port forwardings for the device which is running Home Assistant.
 
 Requirements:
-- Set the `homeassistant_ip` in the configuration of `fritzbox_tools`
-- On your FRITZ!Box, enable the setting `Selbstständige Portfreigaben für dieses Gerät erlauben.` for the device which runs HA
+- On your FRITZ!Box, enable the setting `Selbstständige Portfreigaben für dieses Gerät erlauben.` for the device which runs HA (s. next screenshot)
 - Only works if you have a dedicated IPv4 address (it won't work with DS-Lite)
 
 The port forwards will be exposed as switches in your HA installation (search for `port_forward` in your entity page to find the IDs).
 
 Note: **Currently only port forwards for the device which is running HA are supported!**
 
-**Device profiles**
+![port_forwardings](https://user-images.githubusercontent.com/3121306/72677989-264e4c80-3aa2-11ea-9d56-7be3d025897b.png)
+
+### Device profiles**
 
 You can switch between two device profiles ("Zugangsprofile") within Home Assistant for the devices within your network.
 
@@ -82,7 +84,7 @@ The device profiles will be exposed as switches in your HA installation (search 
 Note: **due to the underlying library, the update routine is not the fastest. This might result in warnings.**
 
 
-## Exposed entities
+#### Exposed entities
 
 - `service.reconnect`  Reconnect to your ISP
 - `switch.fritzbox_wifi`  Turns on/off wifi

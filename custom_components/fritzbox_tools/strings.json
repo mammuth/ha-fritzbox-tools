@@ -2,18 +2,23 @@
     "config": {
         "title": "Fritz!Box Tools",
         "step": {
-            "user": {
-                "title": "Setup Fritz!Box Tools",
+          "setup_additional": {
+              "title": "Setup Fritz!Box Tools - optional settings",
+              "description": "Device profiles need a list of devices.\nleave it empty if you don't need it.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
+              "data": {
+                  "profile_on": "Device profiles: Profile on",
+                  "profile_off": "Device profiles: Profile off",
+                  "devices": "Device profiles: comma seperated list of devices"
+              }
+            },
+              "start_config": {
+                "title": "Setup Fritz!Box Tools - mandatory",
                 "description": "Setup Fritz!Box Tools to control your Fritz!Box.\nMinimum needed: username, password.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
                 "data": {
                     "host": "Host",
-                    "password": "Password",
                     "port": "Port",
                     "username": "Username",
-                    "homeassistant_ip": "Port forwardings: IP of homeassistant device",
-                    "profile_on": "Device profiles: Profile on",
-                    "profile_off": "Device profiles: Profile off",
-                    "devices": "Device profiles: comma seperated list of devices"
+                    "password": "Password"
                 }
             }
         },
