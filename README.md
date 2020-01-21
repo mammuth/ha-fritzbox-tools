@@ -86,7 +86,8 @@ Note: **due to the underlying library, the update routine is not the fastest. Th
 
 - `service.reconnect`  Reconnect to your ISP
 - `switch.fritzbox_wifi`  Turns on/off wifi
-- `switch.fritzbox_guestwifi`  Turns on/off guest wifi
+- `switch.fritzbox_wifi_5ghz`  Turns on/off wifi (5GHz)
+- `switch.fritzbox_guest_wifi`  Turns on/off guest wifi
 - `binary_sensor.fritzbox_connectivity`  online/offline depending on your internet connection
 - `switch.fritzbox_portforward_[description of your forward]` for each of your port forwards for your HA device
 - `switch.fritzbox_profile_[name of your device]` for each device in your fritzbox network
@@ -124,7 +125,7 @@ automation:
   - alias: "Guests Wifi Turned On -> Send Password To Phone
     trigger:
       platform: state
-      entity_id: switch.fritzbox_guestwifi
+      entity_id: switch.fritzbox_guest_wifi
       to: 'on'
     action:
       - service: notify.pushbullet_max
