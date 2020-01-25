@@ -9,8 +9,7 @@ Custom component for Home Assistant to control your FRITZ!Box
 - Switch between device profiles ("Zugangsprofile") for devices in your network
 - Turn on/off call deflections ("Rufumleitung")
 - Manage port forwardings for your Home Assistant device
-- Turn on/off wifi
-- Turn on/off guest wifi
+- Turn on/off wifi and guest wifi
 - Reconnect your FRITZ!Box / get new IP from provider
 - Sensor for internet connectivity (with external IP and uptime attributes)
 
