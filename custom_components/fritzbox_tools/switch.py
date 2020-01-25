@@ -114,11 +114,23 @@ async def async_setup_entry(
                             [FritzBoxProfileSwitch(fritzbox_tools, device)],
                         )
 
-    async_add_entities([FritzBoxGuestWifiSwitch(fritzbox_tools)])
+    def _create_wifi_switches():
+        if "WLANConfiguration:3" not in fritzbox_tools.connection.services:
+            networks = {"1": "Wifi", "2": "Guest Wifi"}
+        else:
+            networks = {"1": "Wifi", "2": "Wifi (5GHz)", "3": "Guest Wifi"}
+
+        for net in networks:
+            hass.add_job(
+                async_add_entities,
+                [FritzBoxWifiSwitch(fritzbox_tools, net, networks[net])],
+            )
+            
+    hass.async_add_executor_job(_create_wifi_switches)
     hass.async_add_executor_job(_create_port_switches)
     hass.async_add_executor_job(_create_deflection_switches)
     hass.async_add_executor_job(_create_profile_switches)
-
+    
     return True
 
 
@@ -266,7 +278,6 @@ class FritzBoxPortSwitch(SwitchDevice):
             return False
         else:
             return True
-
 
 class FritzBoxDeflectionSwitch(SwitchDevice):
     """Defines a FRITZ!Box Tools PortForward switch."""
@@ -553,36 +564,36 @@ class FritzBoxProfileSwitch(SwitchDevice):
         else:
             return True
 
+class FritzBoxWifiSwitch(SwitchDevice):
+    """Defines a FRITZ!Box Tools Wifi switch."""
 
-class FritzBoxGuestWifiSwitch(SwitchDevice):
-    """Defines a FRITZ!Box Tools Guest Wifi switch."""
-
-    name = "FRITZ!Box Guest Wifi"
     icon = "mdi:wifi"
-    entity_id = ENTITY_ID_FORMAT.format("fritzbox_guestwifi")
     _update_grace_period = 5  # seconds
 
-    def __init__(self, fritzbox_tools):
-        self.fritzbox_tools = fritzbox_tools
+    def __init__(self, fritzbox_tools, network_num, network_name):
+        self._fritzbox_tools = fritzbox_tools
+        self._network_num = network_num
+        id = network_name.lower().replace(' ', '_').replace('(', '').replace(')', '')
+        self.entity_id = ENTITY_ID_FORMAT.format(f"fritzbox_{id}")
+        self._name = f"FRITZ!Box {network_name}"
         self._is_on = False
         self._last_toggle_timestamp = None
         self._is_available = (
             True  # set to False if an error happend during toggling the switch
         )
-        if "WLANConfiguration:3" not in self.fritzbox_tools.connection.services:
-            self.network = 2  # use WLANConfiguration:2 in case of no dualband wifi
-        else:
-            self.network = 3
-
         super().__init__()
 
     @property
+    def name(self):
+        return self._name
+        
+    @property
     def unique_id(self):
-        return f"{self.fritzbox_tools.unique_id}-{self.entity_id}"
+        return f"{self._fritzbox_tools.unique_id}-{self.entity_id}"
 
     @property
     def device_info(self):
-        return self.fritzbox_tools.device_info
+        return self._fritzbox_tools.device_info
 
     @property
     def is_on(self) -> bool:
@@ -596,8 +607,8 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
         from fritzconnection.fritzconnection import AuthorizationError
 
         try:
-            status = self.fritzbox_tools.connection.call_action(
-                f"WLANConfiguration:{self.network}", "GetInfo"
+            status = self._fritzbox_tools.connection.call_action(
+                f"WLANConfiguration:{self._network_num}", "GetInfo"
             )["NewStatus"]
             self._is_on = True if status == "Up" else False
             self._is_available = True
@@ -609,7 +620,7 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
             )
             self._is_available = False
         except Exception:
-            _LOGGER.error("Could not get Guest Wifi state", exc_info=True)
+            _LOGGER.error(f"Could not get {self.name} state", exc_info=True)
             self._is_available = False
 
     async def async_update(self):
@@ -618,38 +629,38 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
             and time.time() < self._last_toggle_timestamp + self._update_grace_period
         ):
             # We skip update for 5 seconds after toggling the switch
-            # This is because the router needs some time to change the guest wifi state
+            # This is because the router needs some time to change the wifi state
             _LOGGER.debug(
                 "Not updating switch state, because last toggle happend < 5 seconds ago"
             )
         else:
-            _LOGGER.debug("Updating guest wifi switch state...")
+            _LOGGER.debug(f"Updating {self.name} switch state...")
             # Update state from device
             await self._async_fetch_update()
 
     async def async_turn_on(self, **kwargs) -> None:
-        success: bool = await self._async_handle_guestwifi_turn_on_off(turn_on=True)
+        success: bool = await self._async_handle_wifi_turn_on_off(turn_on=True)
         if success is True:
             self._is_on = True
             self._last_toggle_timestamp = time.time()
         else:
             self._is_on = False
             _LOGGER.error(
-                "An error occurred while turning on fritzbox_tools Guest wifi switch."
+                f"An error occurred while turning on fritzbox_tools {self.name} switch."
             )
 
     async def async_turn_off(self, **kwargs) -> None:
-        success: bool = await self._async_handle_guestwifi_turn_on_off(turn_on=False)
+        success: bool = await self._async_handle_wifi_turn_on_off(turn_on=False)
         if success is True:
             self._is_on = False
             self._last_toggle_timestamp = time.time()
         else:
             self._is_on = True
             _LOGGER.error(
-                "An error occurred while turning off fritzbox_tools Guest wifi switch."
+                f"An error occurred while turning off fritzbox_tools {self.name} switch."
             )
 
-    async def _async_handle_guestwifi_turn_on_off(self, turn_on: bool) -> bool:
+    async def _async_handle_wifi_turn_on_off(self, turn_on: bool) -> bool:
         # pylint: disable=import-error
         from fritzconnection.fritzconnection import (
             ServiceError,
@@ -659,8 +670,8 @@ class FritzBoxGuestWifiSwitch(SwitchDevice):
 
         new_state = "1" if turn_on else "0"
         try:
-            self.fritzbox_tools.connection.call_action(
-                f"WLANConfiguration:{self.network}", "SetEnable", NewEnable=new_state
+            self._fritzbox_tools.connection.call_action(
+                f"WLANConfiguration:{self._network_num}", "SetEnable", NewEnable=new_state
             )
         except AuthorizationError:
             _LOGGER.error(
