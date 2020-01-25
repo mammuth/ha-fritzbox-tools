@@ -31,7 +31,7 @@ from .const import (
     SUPPORTED_DOMAINS,
 )
 
-REQUIREMENTS = ["fritzconnection==1.2.1", "fritz-switch-profiles==1.0.0", "xmltodict==0.12.0"]
+REQUIREMENTS = ["fritzconnection==1.2.0", "fritz-switch-profiles==1.0.0", "xmltodict==0.12.0"]
 
 DATA_FRITZ_TOOLS_INSTANCE = "fritzbox_tools_instance"
 
