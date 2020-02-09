@@ -8,7 +8,7 @@ This custom component allows you to get more out of your FRITZ!Box
 - Switch between device profiles ("Zugangsprofile") for devices in your network
 - Turn on/off call deflections ("Rufumleitung")
 - Manage port forwardings for your Home Assistant device
-- Turn on/off guest wifi
+- Turn on/off wifi and guest wifi
 - Reconnect your FRITZ!Box / get new IP from provider
 - Sensor for internet connectivity (with external IP and uptime attributes)
 
@@ -24,7 +24,7 @@ Check out the [README](https://github.com/mammuth/ha-fritzbox-tools/blob/master/
 #### Prepare your FRITZ!Box
 
 If you want to be able to control settings of the FRITZ!Box (eg. toggle device profiles, guest wifi, port forwards, ...), you need to performe some settings on your FRITZ!Box.
-Please refer to the [documentation](https://github.com/mammuth/ha-fritzbox-tools/blob/master/README.md#configuration) for more details.
+Please refer to the [documentation](https://github.com/mammuth/ha-fritzbox-tools/#configuration) for more details.
 
 
 
