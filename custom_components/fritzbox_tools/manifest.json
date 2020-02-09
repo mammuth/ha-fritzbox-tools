@@ -4,6 +4,6 @@
     "documentation": "https://github.com/mammuth/ha-fritzbox-tools/blob/master/README.md",
     "codeowners": ["@mammuth"],
     "dependencies": [],
-    "requirements": ["fritzconnection==0.8.4", "fritz-switch-profiles==1.0.0", "xmltodict==0.12.0"],
+    "requirements": ["fritzconnection==1.2.0", "fritz-switch-profiles==1.0.0", "xmltodict==0.12.0"],
     "config_flow": true
   }

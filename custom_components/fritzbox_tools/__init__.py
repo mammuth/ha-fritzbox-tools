@@ -31,7 +31,7 @@ from .const import (
     SUPPORTED_DOMAINS,
 )
 
-REQUIREMENTS = ["fritzconnection==0.8.4", "fritz-switch-profiles==1.0.0"]
+REQUIREMENTS = ["fritzconnection==1.2.0", "fritz-switch-profiles==1.0.0", "xmltodict==0.12.0"]
 
 DATA_FRITZ_TOOLS_INSTANCE = "fritzbox_tools_instance"
 
@@ -129,11 +129,13 @@ class FritzBoxTools(object):
         device_list,
     ):
         # pylint: disable=import-error
-        import fritzconnection as fc
+        from fritzconnection import FritzConnection
+        from fritzconnection.lib.fritzstatus import FritzStatus
         from fritz_switch_profiles import FritzProfileSwitch
 
-        self.connection = fc.FritzConnection(
-            address=host, port=port, user=username, password=password
+        # general timeout for all requests to the router. Some calls need quite some time.
+        self.connection = FritzConnection(
+            address=host, port=port, user=username, password=password, timeout=30.0
         )
 
         if device_list != DEFAULT_DEVICES:
@@ -141,7 +143,7 @@ class FritzBoxTools(object):
                 "http://" + host, username, password
             )
 
-        self.fritzstatus = fc.FritzStatus(fc=self.connection)
+        self.fritzstatus = FritzStatus(fc=self.connection)
         self.ha_ip = get_local_ip()
         self.profile_on = profile_on
         self.profile_off = profile_off
@@ -168,14 +170,14 @@ class FritzBoxTools(object):
     async def is_ok(self):
         # TODO for future: do more of the async_setup_entry checks right here
 
-        from fritzconnection.fritzconnection import AuthorizationError
+        from fritzconnection.core.exceptions import FritzConnectionException
 
         try:
             _ = self.connection.call_action(
                 "Layer3Forwarding:1", "GetDefaultConnectionService"
             )["NewDefaultConnectionService"]
             return True, ""
-        except AuthorizationError:
+        except FritzConnectionException:
             return False, "connection_error"
 
     @property

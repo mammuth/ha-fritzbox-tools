@@ -26,10 +26,10 @@ async def async_setup_entry(
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
 
     def _create_deflection_switches():
-        number_of_deflections = fritzbox_tools.connection.call_action(
-            "X_AVM-DE_OnTel:1", "GetNumberOfDeflections"
-        )["NewNumberOfDeflections"]
-        if "X_AVM-DE_OnTel:1" in fritzbox_tools.connection.services and number_of_deflections != 0:
+        deflections_response = fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetNumberOfDeflections")
+        _LOGGER.debug(deflections_response)
+        _LOGGER.debug(fritzbox_tools.connection.services)
+        if "X_AVM-DE_OnTel1" in fritzbox_tools.connection.services and deflections_response["NewNumberOfDeflections"] != 0:
             try:
                 _LOGGER.debug("Setting up deflection switches")
                 deflections = xmltodict.parse(
@@ -60,16 +60,23 @@ async def async_setup_entry(
                 )["NewDefaultConnectionService"]
                 connection_type = connection_type[2:].replace(".", ":")
 
-                # Query port forwardings and setup a switch for each forward for the current deivce
+                # Query port forwardings and setup a switch for each forward for the current device
                 port_forwards_count: int = fritzbox_tools.connection.call_action(
                     connection_type, "GetPortMappingNumberOfEntries"
                 )["NewPortMappingNumberOfEntries"]
+                _LOGGER.debug('Number of port forwards response')
+                _LOGGER.debug(port_forwards_count)
                 for i in range(port_forwards_count):
                     portmap = fritzbox_tools.connection.call_action(
                         connection_type,
                         "GetGenericPortMappingEntry",
                         NewPortMappingIndex=i,
                     )
+                    _LOGGER.debug("Specific port forward response")
+                    _LOGGER.debug(portmap)
+
+                    _LOGGER.debug(f"Port forwards of the following device are shown: {fritzbox_tools.ha_ip}")
+
                     # We can only handle port forwards of the given device
                     if portmap["NewInternalClient"] == fritzbox_tools.ha_ip:
                         hass.add_job(
@@ -125,12 +132,12 @@ async def async_setup_entry(
                 async_add_entities,
                 [FritzBoxWifiSwitch(fritzbox_tools, net, networks[net])],
             )
-            
+
     hass.async_add_executor_job(_create_wifi_switches)
     hass.async_add_executor_job(_create_port_switches)
     hass.async_add_executor_job(_create_deflection_switches)
     hass.async_add_executor_job(_create_profile_switches)
-    
+
     return True
 
 
@@ -143,7 +150,7 @@ class FritzBoxPortSwitch(SwitchDevice):
     def __init__(self, fritzbox_tools, port_mapping, idx, connection_type):
         self.fritzbox_tools = fritzbox_tools
         self.connection_type = connection_type
-        self.port_mapping: dict = port_mapping  # dict in the format as it comes from fritzconnection. eg: {'NewRemoteHost': '0.0.0.0', 'NewExternalPort': 22, 'NewProtocol': 'TCP', 'NewInternalPort': 22, 'NewInternalClient': '192.168.178.31', 'NewEnabled': '0', 'NewPortMappingDescription': 'Beast SSH ', 'NewLeaseDuration': 0}  # noqa
+        self.port_mapping: dict = port_mapping  # dict in the format as it comes from fritzconnection. eg: {'NewRemoteHost': '0.0.0.0', 'NewExternalPort': 22, 'NewProtocol': 'TCP', 'NewInternalPort': 22, 'NewInternalClient': '192.168.178.31', 'NewEnabled': True, 'NewPortMappingDescription': 'Beast SSH ', 'NewLeaseDuration': 0}  # noqa
 
         description = port_mapping["NewPortMappingDescription"]
         self._name = f"Port forward {description}"
@@ -154,7 +161,7 @@ class FritzBoxPortSwitch(SwitchDevice):
         self._is_available = (
             True  # set to False if an error happend during toggling the switch
         )
-        self._is_on = True if self.port_mapping["NewEnabled"] == "1" else False
+        self._is_on = self.port_mapping["NewEnabled"] is True
 
         self._idx = idx  # needed for update routine
         self._last_toggle_timestamp = None
@@ -185,7 +192,7 @@ class FritzBoxPortSwitch(SwitchDevice):
         return self._attributes
 
     async def _async_fetch_update(self):
-        from fritzconnection.fritzconnection import AuthorizationError
+        from fritzconnection.core.exceptions import FritzConnectionException
 
         try:
             self.port_mapping = self.fritzbox_tools.connection.call_action(
@@ -193,7 +200,8 @@ class FritzBoxPortSwitch(SwitchDevice):
                 "GetGenericPortMappingEntry",
                 NewPortMappingIndex=self._idx,
             )
-            self._is_on = True if self.port_mapping["NewEnabled"] == "1" else False
+            _LOGGER.debug(self.port_mapping)
+            self._is_on = self.port_mapping["NewEnabled"] is True
             self._is_available = True
 
             self._attributes["internalIP"] = self.port_mapping["NewInternalClient"]
@@ -203,7 +211,7 @@ class FritzBoxPortSwitch(SwitchDevice):
             self._attributes["description"] = self.port_mapping[
                 "NewPortMappingDescription"
             ]
-        except AuthorizationError:
+        except FritzConnectionException:
             _LOGGER.error(
                 "Authorization Error: Please check the provided credentials and verify that you can log "
                 "into the web interface."
@@ -236,7 +244,7 @@ class FritzBoxPortSwitch(SwitchDevice):
         else:
             self._is_on = False
             _LOGGER.error(
-                "An error occurred while turning on fritzbox_tools Guest wifi switch."
+                "An error occurred while turning on fritzbox_tools port forwarding wifi switch."
             )
 
     async def async_turn_off(self, **kwargs) -> None:
@@ -247,30 +255,25 @@ class FritzBoxPortSwitch(SwitchDevice):
         else:
             self._is_on = True
             _LOGGER.error(
-                "An error occurred while turning off fritzbox_tools Guest wifi switch."
+                "An error occurred while turning off fritzbox_tools port forwarding switch."
             )
 
     async def _async_handle_port_switch_on_off(self, turn_on: bool) -> bool:
         # pylint: disable=import-error
-        from fritzconnection.fritzconnection import (
-            ServiceError,
-            ActionError,
-            AuthorizationError,
-        )
+        from fritzconnection.core.exceptions import FritzSecurityError, FritzConnectionException
 
-        new_state = "1" if turn_on else "0"
-        self.port_mapping["NewEnabled"] = new_state
+        self.port_mapping["NewEnabled"] = "1" if turn_on else "0"
         try:
             self.fritzbox_tools.connection.call_action(
                 self.connection_type, "AddPortMapping", **self.port_mapping
             )
-        except AuthorizationError:
+        except FritzSecurityError:
             _LOGGER.error(
                 "Authorization Error: Please check the provided credentials and verify that you can log into "
                 "the web interface.",
                 exc_info=True,
             )
-        except (ServiceError, ActionError):
+        except FritzConnectionException:
             _LOGGER.error(
                 "Home Assistant cannot call the wished service on the FRITZ!Box.",
                 exc_info=True,
@@ -298,7 +301,7 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
         self._is_available = (
             True  # set to False if an error happend during toggling the switch
         )
-        self._is_on = True if self.dict_of_deflection["Enable"] == "1" else False
+        self._is_on = self.dict_of_deflection["Enable"] is True
 
         self._last_toggle_timestamp = None
         super().__init__()
@@ -328,14 +331,17 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
         return self._attributes
 
     async def _async_fetch_update(self):
-        from fritzconnection.fritzconnection import AuthorizationError
+        from fritzconnection.core.exceptions import FritzConnectionException
 
         try:
             self.dict_of_deflection = xmltodict.parse(
                 self.fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetDeflections")["NewDeflectionList"]
             )["List"][self._item]
 
-            self._is_on = True if self.dict_of_deflection["Enable"] == "1" else False
+            _LOGGER.debug("GetDeflections:")
+            _LOGGER.debug(self.dict_of_deflection)
+
+            self._is_on = self.dict_of_deflection["Enable"] == '1'
             self._is_available = True
 
             self._attributes["Type"] = self.dict_of_deflection["Type"]
@@ -345,7 +351,7 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
             self._attributes["Outgoing"] =  self.dict_of_deflection["Outgoing"]
             self._attributes["PhonebookID"] =  self.dict_of_deflection["PhonebookID"]
 
-        except AuthorizationError:
+        except FritzConnectionException:
             _LOGGER.error(
                 "Authorization Error: Please check the provided credentials and verify that you can log "
                 "into the web interface."
@@ -366,7 +372,7 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
                 "Not updating switch state, because last toggle happend < 5 seconds ago"
             )
         else:
-            _LOGGER.debug("Updating port switch state...")
+            _LOGGER.debug("Updating call deflection switch state...")
             # Update state from device
             await self._async_fetch_update()
 
@@ -394,24 +400,20 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
 
     async def _async_handle_deflection_switch_on_off(self, turn_on: bool) -> bool:
         # pylint: disable=import-error
-        from fritzconnection.fritzconnection import (
-            ServiceError,
-            ActionError,
-            AuthorizationError,
-        )
+        from fritzconnection.core.exceptions import FritzSecurityError, FritzConnectionException
 
-        new_state = "1" if turn_on else "0"
+        new_state = '1' if turn_on else '0'
         try:
             self.fritzbox_tools.connection.call_action(
                 "X_AVM-DE_OnTel:1","SetDeflectionEnable", NewEnable=new_state, NewDeflectionId=self.id
             )
-        except AuthorizationError:
+        except FritzSecurityError:
             _LOGGER.error(
                 "Authorization Error: Please check the provided credentials and verify that you can log into "
                 "the web interface.",
                 exc_info=True,
             )
-        except (ServiceError, ActionError):
+        except FritzConnectionException:
             _LOGGER.error(
                 "Home Assistant cannot call the wished service on the FRITZ!Box.",
                 exc_info=True,
@@ -586,7 +588,7 @@ class FritzBoxWifiSwitch(SwitchDevice):
     @property
     def name(self):
         return self._name
-        
+
     @property
     def unique_id(self):
         return f"{self._fritzbox_tools.unique_id}-{self.entity_id}"
@@ -604,15 +606,17 @@ class FritzBoxWifiSwitch(SwitchDevice):
         return self._is_available
 
     async def _async_fetch_update(self):
-        from fritzconnection.fritzconnection import AuthorizationError
+        from fritzconnection.core.exceptions import FritzConnectionException
 
         try:
-            status = self._fritzbox_tools.connection.call_action(
+            wifi_info = self._fritzbox_tools.connection.call_action(
                 f"WLANConfiguration:{self._network_num}", "GetInfo"
-            )["NewStatus"]
-            self._is_on = True if status == "Up" else False
+            )
+            _LOGGER.debug("Guest WiFi GetInfo:")
+            _LOGGER.debug(wifi_info)
+            self._is_on = True if wifi_info["NewStatus"] == "Up" else False
             self._is_available = True
-        except AuthorizationError:
+        except FritzConnectionException:
             _LOGGER.error(
                 "Authorization Error: Please check the provided credentials and verify that you can log "
                 "into the web interface.",
@@ -662,24 +666,19 @@ class FritzBoxWifiSwitch(SwitchDevice):
 
     async def _async_handle_wifi_turn_on_off(self, turn_on: bool) -> bool:
         # pylint: disable=import-error
-        from fritzconnection.fritzconnection import (
-            ServiceError,
-            ActionError,
-            AuthorizationError,
-        )
+        from fritzconnection.core.exceptions import FritzSecurityError, FritzConnectionException
 
-        new_state = "1" if turn_on else "0"
         try:
             self._fritzbox_tools.connection.call_action(
-                f"WLANConfiguration:{self._network_num}", "SetEnable", NewEnable=new_state
+                f"WLANConfiguration{self._network_num}", "SetEnable", NewEnable="1" if turn_on else "0"
             )
-        except AuthorizationError:
+        except FritzSecurityError:
             _LOGGER.error(
                 "Authorization Error: Please check the provided credentials and verify that you can log into "
                 "the web interface.",
                 exc_info=True,
             )
-        except (ServiceError, ActionError):
+        except FritzConnectionException:
             _LOGGER.error(
                 "Home Assistant cannot call the wished service on the FRITZ!Box.",
                 exc_info=True,
