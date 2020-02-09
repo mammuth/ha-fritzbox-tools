@@ -122,7 +122,7 @@ async def async_setup_entry(
                         )
 
     def _create_wifi_switches():
-        if "WLANConfiguration:3" not in fritzbox_tools.connection.services:
+        if "WLANConfiguration3" not in fritzbox_tools.connection.services:
             networks = {"1": "Wifi", "2": "Guest Wifi"}
         else:
             networks = {"1": "Wifi", "2": "Wifi (5GHz)", "3": "Guest Wifi"}
