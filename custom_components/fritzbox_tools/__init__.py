@@ -108,7 +108,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         use_wifi = use_wifi,
         use_deflections = use_deflections,
         use_port = use_port,
-        use_devices = use_port,
+        use_devices = use_devices,
     )
 
     hass.data.setdefault(DOMAIN, {})[DATA_FRITZ_TOOLS_INSTANCE] = fritz_tools

@@ -116,6 +116,7 @@ async def async_setup_entry(
                 # Check for duplicated host names in the devices list.
                 if device["name"] not in duplicated_hostnames:
                     if device["name"] in fritzbox_tools.device_list:
+                        _LOGGER.debug(f"device to be added: {device}")
                         hass.add_job(
                             async_add_entities,
                             [FritzBoxProfileSwitch(fritzbox_tools, device)],
@@ -140,6 +141,11 @@ async def async_setup_entry(
         hass.async_add_executor_job(_create_deflection_switches)
     if fritzbox_tools.use_devices:
         hass.async_add_executor_job(_create_profile_switches)
+
+    _LOGGER.debug(f"use_wifi: {fritzbox_tools.use_wifi}")
+    _LOGGER.debug(f"use_devices: {fritzbox_tools.use_devices}")
+    _LOGGER.debug(f"use_deflections: {fritzbox_tools.use_deflections}")
+    _LOGGER.debug(f"use_port: {fritzbox_tools.use_port}")
 
     return True
 

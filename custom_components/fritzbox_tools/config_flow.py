@@ -136,7 +136,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         self._use_wifi = user_input.get(CONF_USE_WIFI,DEFAULT_USE_WIFI)
         self._use_devices = user_input.get(CONF_USE_DEVICES, DEFAULT_USE_DEVICES)
 
-        if user_input.get(CONF_USE_DEVICES,DEFAULT_USE_DEVICES):
+        if self._use_devices:
             errors = {}
             return await self._show_setup_form_devices(errors)
         else:
