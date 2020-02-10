@@ -132,11 +132,14 @@ async def async_setup_entry(
                 async_add_entities,
                 [FritzBoxWifiSwitch(fritzbox_tools, net, networks[net])],
             )
-
-    hass.async_add_executor_job(_create_wifi_switches)
-    hass.async_add_executor_job(_create_port_switches)
-    hass.async_add_executor_job(_create_deflection_switches)
-    hass.async_add_executor_job(_create_profile_switches)
+    if fritzbox_tools.use_wifi:
+        hass.async_add_executor_job(_create_wifi_switches)
+    if fritzbox_tools.use_port:
+        hass.async_add_executor_job(_create_port_switches)
+    if fritzbox_tools.use_deflections:
+        hass.async_add_executor_job(_create_deflection_switches)
+    if fritzbox_tools.use_devices:
+        hass.async_add_executor_job(_create_profile_switches)
 
     return True
 

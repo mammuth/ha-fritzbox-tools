@@ -46,6 +46,10 @@ fritzbox_tools:
     - "..."
   profile_on: "Standard"  # Optional. Use if the names of your "Zugangsprofile" are different as the defaults.
   profile_off: "Gesperrt"  # Optional.
+  use_wifi: True # Optional, default True: if False no wifi switches will be exposed
+  use_port: True  # Optional, default True: if False no port switches will be exposed
+  use_devices: True  # Optional, default True: if False no device switches will be exposed, redundant if devices is not specified
+  use_deflections: True # Optional, default True: if False no call deflection switches will be exposed
 ```
 
 ### Prepare your FRITZ!Box
@@ -139,7 +143,7 @@ automation:
 
 If you're using the [Let's Encrypt Addon](https://www.home-assistant.io/addons/lets_encrypt/) you could create an automation for renewing your certificates automatically. However, the http challenge requires port 80 to be open on your router.
 
-The following automation does three things: 
+The following automation does three things:
 - Open port 80 on the router (the port forward needs to be created manually first)
 - Stop the [NGINX proxy addon](https://www.home-assistant.io/addons/nginx_proxy/)
 - start the Let's Encrypt addon to perform the renew

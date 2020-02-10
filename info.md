@@ -23,7 +23,7 @@ Check out the [README](https://github.com/mammuth/ha-fritzbox-tools/blob/master/
 
 #### Prepare your FRITZ!Box
 
-If you want to be able to control settings of the FRITZ!Box (eg. toggle device profiles, guest wifi, port forwards, ...), you need to performe some settings on your FRITZ!Box.
+If you want to be able to control settings of the FRITZ!Box (eg. toggle device profiles, guest wifi, port forwards, ...), you need to perform some settings on your FRITZ!Box.
 Please refer to the [documentation](https://github.com/mammuth/ha-fritzbox-tools/#configuration) for more details.
 
 
