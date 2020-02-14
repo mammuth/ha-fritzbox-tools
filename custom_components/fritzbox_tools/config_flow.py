@@ -7,11 +7,20 @@ from .const import (
     DOMAIN,
     CONF_PROFILE_ON,
     CONF_PROFILE_OFF,
+    CONF_USE_DEFLECTIONS,
+    CONF_USE_DEVICES,
+    CONF_USE_WIFI,
+    CONF_USE_PORT,
+    DEFAULT_USERNAME,
     DEFAULT_DEVICES,
     DEFAULT_HOST,
     DEFAULT_PORT,
     DEFAULT_PROFILE_ON,
     DEFAULT_PROFILE_OFF,
+    DEFAULT_USE_DEFLECTIONS,
+    DEFAULT_USE_WIFI,
+    DEFAULT_USE_DEVICES,
+    DEFAULT_USE_PORT,
     SUPPORTED_DOMAINS,
 )
 from homeassistant.config_entries import ConfigFlow
@@ -57,15 +66,30 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             errors=errors or {},
         )
 
-    async def _show_setup_form_additional(self, errors=None):
+    async def _show_setup_form_devices(self, errors=None):
         """Show the setup form to the user."""
         return self.async_show_form(
-            step_id="setup_additional",
+            step_id="setup_devices",
             data_schema=vol.Schema(
                 {
                     vol.Optional(CONF_PROFILE_ON, default=DEFAULT_PROFILE_ON): str,
                     vol.Optional(CONF_PROFILE_OFF, default=DEFAULT_PROFILE_OFF): str,
                     vol.Optional(CONF_DEVICES): str,
+                }
+            ),
+            errors=errors or {},
+        )
+
+    async def _show_setup_form_options(self, errors=None):
+        """Show the setup form to the user."""
+        return self.async_show_form(
+            step_id="setup_options",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_USE_WIFI, default=DEFAULT_USE_WIFI): bool,
+                    vol.Required(CONF_USE_PORT, default=DEFAULT_USE_PORT): bool,
+                    vol.Required(CONF_USE_DEVICES, default=DEFAULT_USE_DEVICES): bool,
+                    vol.Required(CONF_USE_DEFLECTIONS, default=DEFAULT_USE_DEFLECTIONS): bool,
                 }
             ),
             errors=errors or {},
@@ -96,7 +120,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 password=password,
                 profile_on=None,
                 profile_off=None,
-                device_list=None
+                device_list=[]
             )
             success, error = await self.fritz_tools.is_ok()
 
@@ -104,9 +128,38 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 errors["base"] = error
                 return await self._show_setup_form_init(errors)
 
-            return await self._show_setup_form_additional(errors)
+            return await self._show_setup_form_options(errors)
 
-    async def async_step_setup_additional(self, user_input=None):
+    async def async_step_setup_options(self, user_input=None):
+        self._use_port = user_input.get(CONF_USE_PORT,DEFAULT_USE_PORT)
+        self._use_deflections = user_input.get(CONF_USE_DEFLECTIONS,DEFAULT_USE_DEFLECTIONS)
+        self._use_wifi = user_input.get(CONF_USE_WIFI,DEFAULT_USE_WIFI)
+        self._use_devices = user_input.get(CONF_USE_DEVICES, DEFAULT_USE_DEVICES)
+
+        if self._use_devices:
+            errors = {}
+            return await self._show_setup_form_devices(errors)
+        else:
+            devices = []
+            return self.async_create_entry(
+                title="FRITZ!Box Tools",
+                data={
+                    CONF_HOST: self.fritz_tools.host,
+                    CONF_PASSWORD: self.fritz_tools.password,
+                    CONF_PORT: self.fritz_tools.port,
+                    CONF_PROFILE_ON: DEFAULT_PROFILE_ON,
+                    CONF_PROFILE_ON: DEFAULT_PROFILE_OFF,
+                    CONF_USERNAME: self.fritz_tools.username,
+                    CONF_DEVICES: devices,
+                    CONF_USE_WIFI: self._use_wifi,
+                    CONF_USE_DEFLECTIONS: self._use_deflections,
+                    CONF_USE_PORT: self._use_port,
+                    CONF_USE_DEVICES: self._use_devices,
+                },
+            )
+
+
+    async def async_step_setup_devices(self, user_input=None):
         devices = user_input.get(CONF_DEVICES,DEFAULT_DEVICES)
         if isinstance(devices, str):
             devices = devices.replace(' ', '').split(',')
@@ -117,10 +170,14 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 CONF_HOST: self.fritz_tools.host,
                 CONF_PASSWORD: self.fritz_tools.password,
                 CONF_PORT: self.fritz_tools.port,
-                CONF_PROFILE_ON: user_input.get(CONF_PROFILE_ON),
-                CONF_PROFILE_OFF: user_input.get(CONF_PROFILE_OFF),
+                CONF_PROFILE_ON: user_input.get(CONF_PROFILE_ON, DEFAULT_PROFILE_ON),
+                CONF_PROFILE_OFF: user_input.get(CONF_PROFILE_OFF, DEFAULT_PROFILE_OFF),
                 CONF_USERNAME: self.fritz_tools.username,
-                CONF_DEVICES: devices
+                CONF_DEVICES: devices,
+                CONF_USE_WIFI: self._use_wifi,
+                CONF_USE_DEFLECTIONS: self._use_deflections,
+                CONF_USE_PORT: self._use_port,
+                CONF_USE_DEVICES: self._use_devices,
             },
         )
 
@@ -154,7 +211,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             password=password,
             profile_on=None,
             profile_off=None,
-            device_list=devices,
+            device_list=[],
         )
         success, error = await fritz_tools.is_ok()
 
@@ -171,5 +228,9 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 CONF_PROFILE_OFF: import_config.get(CONF_PROFILE_OFF, DEFAULT_PROFILE_OFF),
                 CONF_USERNAME: username,
                 CONF_DEVICES: devices,
+                CONF_USE_WIFI: DEFAULT_USE_WIFI,
+                CONF_USE_DEFLECTIONS: DEFAULT_USE_DEFLECTIONS,
+                CONF_USE_PORT: DEFAULT_USE_PORT,
+                CONF_USE_DEVICES: DEFAULT_USE_DEVICES,
             },
         )

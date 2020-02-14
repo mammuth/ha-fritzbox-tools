@@ -1,19 +1,29 @@
 {
     "config": {
-        "title": "Fritz!Box Tools",
+        "title": "FRITZ!Box Tools",
         "step": {
-          "setup_additional": {
-              "title": "Setup Fritz!Box Tools - optional settings",
-              "description": "Device profiles need a list of devices.\nleave it empty if you don't need it.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
+          "setup_options": {
+              "title": "Setup FRITZ!Box Tools - optional settings",
+              "description": "Select which features you want to use.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
               "data": {
-                  "profile_on": "Device profiles: Profile on",
-                  "profile_off": "Device profiles: Profile off",
-                  "devices": "Device profiles: comma seperated list of devices"
+                  "use_devices": "device profile switches",
+                  "use_wifi": "wifi switches",
+                  "use_port": "port forwarding switches for hass device",
+                  "use_deflections": "call deflection switches"
               }
             },
+            "setup_devices": {
+                "title": "Setup FRITZ!Box Tools - device settings",
+                "description": "Device profiles need a list of devices.\nleave it empty if you don't need it.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
+                "data": {
+                    "profile_on": "Device profiles: Profile on",
+                    "profile_off": "Device profiles: Profile off",
+                    "devices": "Device profiles: comma seperated list of devices"
+                }
+              },
               "start_config": {
-                "title": "Setup Fritz!Box Tools - mandatory",
-                "description": "Setup Fritz!Box Tools to control your Fritz!Box.\nMinimum needed: username, password.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
+                "title": "Setup FRITZ!Box Tools - mandatory",
+                "description": "Setup FRITZ!Box Tools to control your FRITZ!Box.\nMinimum needed: username, password.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
                 "data": {
                     "host": "Host",
                     "port": "Port",
@@ -23,10 +33,10 @@
             }
         },
         "error": {
-            "connection_error": "Failed to connect to Fritz!Box. Check your username and password."
+            "connection_error": "Failed to connect to FRITZ!Box. Check your username and password."
         },
         "abort": {
-            "single_instance_allowed": "Only a single configuration of Fritz!Box Tools is allowed.",
+            "single_instance_allowed": "Only a single configuration of FRITZ!Box Tools is allowed.",
             "existing_instance_updated": "Updated existing configuration."
         }
     }

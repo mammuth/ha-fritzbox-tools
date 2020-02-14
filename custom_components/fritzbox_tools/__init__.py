@@ -23,12 +23,21 @@ from .const import (
     CONF_PROFILE_ON,
     DEFAULT_DEVICES,
     DEFAULT_HOST,
+    DEFAULT_USERNAME,
     DEFAULT_PORT,
     DEFAULT_PROFILE_OFF,
     DEFAULT_PROFILE_ON,
     DOMAIN,
     SERVICE_RECONNECT,
     SUPPORTED_DOMAINS,
+    CONF_USE_WIFI,
+    CONF_USE_DEVICES,
+    CONF_USE_DEFLECTIONS,
+    CONF_USE_PORT,
+    DEFAULT_USE_WIFI,
+    DEFAULT_USE_DEVICES,
+    DEFAULT_USE_DEFLECTIONS,
+    DEFAULT_USE_PORT,
 )
 
 REQUIREMENTS = ["fritzconnection==1.2.0", "fritz-switch-profiles==1.0.0", "xmltodict==0.12.0"]
@@ -48,6 +57,10 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_DEVICES): vol.All(cv.ensure_list, [cv.string]),
                 vol.Optional(CONF_PROFILE_ON): cv.string,
                 vol.Optional(CONF_PROFILE_OFF): cv.string,
+                vol.Optional(CONF_USE_DEVICES): cv.string,
+                vol.Optional(CONF_USE_PORT): cv.string,
+                vol.Optional(CONF_USE_WIFI): cv.string,
+                vol.Optional(CONF_USE_DEFLECTIONS): cv.string,
             }
         )
     },
@@ -79,6 +92,10 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
     profile_off = entry.data.get(CONF_PROFILE_OFF, DEFAULT_PROFILE_OFF)
     profile_on = entry.data.get(CONF_PROFILE_ON, DEFAULT_PROFILE_ON)
     device_list = entry.data.get(CONF_DEVICES, DEFAULT_DEVICES)
+    use_devices = entry.data.get(CONF_USE_DEVICES, DEFAULT_USE_DEVICES)
+    use_wifi = entry.data.get(CONF_USE_WIFI, DEFAULT_USE_WIFI)
+    use_port = entry.data.get(CONF_USE_PORT, DEFAULT_USE_PORT)
+    use_deflections = entry.data.get(CONF_USE_DEFLECTIONS, DEFAULT_USE_DEFLECTIONS)
 
     fritz_tools = FritzBoxTools(
         host=host,
@@ -88,6 +105,10 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         profile_on=profile_on,
         profile_off=profile_off,
         device_list=device_list,
+        use_wifi = use_wifi,
+        use_deflections = use_deflections,
+        use_port = use_port,
+        use_devices = use_devices,
     )
 
     hass.data.setdefault(DOMAIN, {})[DATA_FRITZ_TOOLS_INSTANCE] = fritz_tools
@@ -120,13 +141,17 @@ async def async_unload_entry(hass: HomeAssistantType, entry: ConfigType) -> bool
 class FritzBoxTools(object):
     def __init__(
         self,
-        host,
-        port,
-        username,
         password,
-        profile_on,
-        profile_off,
-        device_list,
+        username = DEFAULT_USERNAME,
+        host = DEFAULT_HOST,
+        port=DEFAULT_PORT,
+        profile_on = DEFAULT_PROFILE_ON,
+        profile_off = DEFAULT_PROFILE_OFF,
+        device_list = DEFAULT_DEVICES,
+        use_port = DEFAULT_USE_PORT,
+        use_deflections = DEFAULT_USE_DEFLECTIONS,
+        use_wifi = DEFAULT_USE_WIFI,
+        use_devices = DEFAULT_USE_DEVICES,
     ):
         # pylint: disable=import-error
         from fritzconnection import FritzConnection
@@ -154,6 +179,11 @@ class FritzBoxTools(object):
         self.password = password
         self.port = port
         self.host = host
+
+        self.use_wifi = use_wifi
+        self.use_port = use_port
+        self.use_deflections = use_deflections
+        self.use_devices = use_devices
 
     async def async_update_profiles(self):
         if time.time() > self.profile_last_updated + 5:
