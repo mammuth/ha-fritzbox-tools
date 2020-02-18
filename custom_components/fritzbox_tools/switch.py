@@ -34,13 +34,16 @@ async def async_setup_entry(
                 _LOGGER.debug("Setting up deflection switches")
                 deflections = xmltodict.parse(
                     fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetDeflections")["NewDeflectionList"]
-                )["List"].items()
-                for item, dict_of_deflection in deflections:
+                )["List"]["Item"]
+                if not isinstance(deflections, list):
+                    deflections = [deflections]
+
+                for dict_of_deflection in deflections:
                     hass.add_job(
                         async_add_entities,
                         [
                             FritzBoxDeflectionSwitch(
-                                fritzbox_tools, item, dict_of_deflection
+                                fritzbox_tools, dict_of_deflection
                             )
                         ],
                     )
@@ -297,13 +300,12 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
     icon = "mdi:phone-forward"
     _update_grace_period = 30  # seconds
 
-    def __init__(self, fritzbox_tools, item, dict_of_deflection):
+    def __init__(self, fritzbox_tools, dict_of_deflection):
         self.fritzbox_tools = fritzbox_tools
         self.dict_of_deflection = dict_of_deflection
-        self.id = self.dict_of_deflection["DeflectionId"]
-        self._item = item
+        self.id = int(self.dict_of_deflection["DeflectionId"])
         self._name = f"Deflection {self.id}"
-        id = f"fritzbox_deflection_{slugify(self.id)}"
+        id = f"fritzbox_deflection_{self.id}"
         self.entity_id = ENTITY_ID_FORMAT.format(id)
 
         self._attributes = defaultdict(str)
@@ -345,7 +347,9 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
         try:
             self.dict_of_deflection = xmltodict.parse(
                 self.fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetDeflections")["NewDeflectionList"]
-            )["List"][self._item]
+            )["List"]["Item"]
+            if isinstance(self.dict_of_deflection, list):
+                self.dict_of_deflection = self.dict_of_deflection[self.id]
 
             _LOGGER.debug("GetDeflections:")
             _LOGGER.debug(self.dict_of_deflection)
