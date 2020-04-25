@@ -206,7 +206,7 @@ class FritzBoxTools(object):
         _LOGGER.info("Reconnecting the fritzbox.")
         self.connection.reconnect()
 
-    async def is_ok(self):
+    def is_ok(self):
         # TODO for future: do more of the async_setup_entry checks right here
 
         from fritzconnection.core.exceptions import FritzConnectionException
