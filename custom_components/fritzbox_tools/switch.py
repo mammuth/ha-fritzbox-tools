@@ -207,11 +207,11 @@ class FritzBoxPortSwitch(SwitchDevice):
         from fritzconnection.core.exceptions import FritzConnectionException
 
         try:
-            self.port_mapping = self.fritzbox_tools.connection.call_action(
+            self.port_mapping = await self.hass.async_add_executor_job(lambda: self.fritzbox_tools.connection.call_action(
                 self.connection_type,
                 "GetGenericPortMappingEntry",
                 NewPortMappingIndex=self._idx,
-            )
+            ))
             _LOGGER.debug(self.port_mapping)
             self._is_on = self.port_mapping["NewEnabled"] is True
             self._is_available = True
@@ -276,9 +276,9 @@ class FritzBoxPortSwitch(SwitchDevice):
 
         self.port_mapping["NewEnabled"] = "1" if turn_on else "0"
         try:
-            self.fritzbox_tools.connection.call_action(
+            self.hass.async_add_executor_job(lambda: self.fritzbox_tools.connection.call_action(
                 self.connection_type, "AddPortMapping", **self.port_mapping
-            )
+            ))
         except FritzSecurityError:
             _LOGGER.error(
                 "Authorization Error: Please check the provided credentials and verify that you can log into "
