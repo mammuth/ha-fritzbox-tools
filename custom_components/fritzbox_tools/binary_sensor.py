@@ -3,7 +3,7 @@ import logging
 from collections import defaultdict
 from datetime import timedelta
 
-from homeassistant.components.binary_sensor import ENTITY_ID_FORMAT, BinarySensorDevice
+from homeassistant.components.binary_sensor import ENTITY_ID_FORMAT, BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.typing import HomeAssistantType
 
@@ -24,7 +24,7 @@ async def async_setup_entry(
     return True
 
 
-class FritzBoxConnectivitySensor(BinarySensorDevice):
+class FritzBoxConnectivitySensor(BinarySensorEntity):
     name = "FRITZ!Box Connectivity"
     entity_id = ENTITY_ID_FORMAT.format("fritzbox_connectivity")
     icon = "mdi:router-wireless"
@@ -63,7 +63,7 @@ class FritzBoxConnectivitySensor(BinarySensorDevice):
         self._is_on = True
         try:
             status = self.fritzbox_tools.fritzstatus
-            self._is_on = status.is_connected
+            self._is_on = await self.hass.async_add_executor_job(lambda: status.is_connected)
             self._is_available = True
             for attr in [
                 "modelname",
@@ -72,7 +72,7 @@ class FritzBoxConnectivitySensor(BinarySensorDevice):
                 "uptime",
                 "str_uptime",
             ]:
-                self._attributes[attr] = getattr(status, attr)
+                self._attributes[attr] = await self.hass.async_add_executor_job(lambda: getattr(status, attr))
         except Exception:
             _LOGGER.error("Error getting the state from the FRITZ!Box", exc_info=True)
             self._is_available = False
