@@ -510,7 +510,7 @@ class FritzBoxProfileSwitch(SwitchDevice):
         return self._is_available
 
     async def _async_fetch_update(self):
-        await self.fritzbox_tools.async_update_profiles()
+        await self.hass.async_add_executor_job(self.fritzbox_tools.async_update_profiles)
         try:
             devices = self.fritzbox_tools.profile_switch.get_devices()
             for device in devices:
@@ -573,7 +573,7 @@ class FritzBoxProfileSwitch(SwitchDevice):
         else:
             state = [[self.device["id1"], self.id_off]]
         try:
-            self.fritzbox_tools.profile_switch.set_profiles(state)
+            await self.hass.async_add_executor_job(lambda: self.fritzbox_tools.profile_switch.set_profiles(state))
         except Exception:
             _LOGGER.error(
                 f"Home Assistant cannot call the wished service on the FRITZ!Box.",
