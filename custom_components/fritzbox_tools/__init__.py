@@ -139,6 +139,10 @@ async def async_unload_entry(hass: HomeAssistantType, entry: ConfigType) -> bool
 
 
 class FritzBoxTools(object):
+    """
+    Attention: The initialization of the class performs sync I/O. If you're calling this from within Home Assistant,
+    wrap it in await self.hass.async_add_executor_job(lambda: FritzBoxTools(...))
+    """
     def __init__(
         self,
         password,
