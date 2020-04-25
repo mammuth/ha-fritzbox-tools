@@ -397,7 +397,7 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
         else:
             self._is_on = False
             _LOGGER.error(
-                "An error occurred while turning on fritzbox_tools Guest wifi switch."
+                "An error occurred while turning on fritzbox_tools Deflection switch."
             )
 
     async def async_turn_off(self, **kwargs) -> None:
@@ -408,7 +408,7 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
         else:
             self._is_on = True
             _LOGGER.error(
-                "An error occurred while turning off fritzbox_tools Guest wifi switch."
+                "An error occurred while turning off fritzbox_tools Deflection switch."
             )
 
     async def _async_handle_deflection_switch_on_off(self, turn_on: bool) -> bool:
@@ -418,7 +418,7 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
         new_state = '1' if turn_on else '0'
         try:
             self.fritzbox_tools.connection.call_action(
-                "X_AVM-DE_OnTel:1","SetDeflectionEnable", NewEnable=new_state, NewDeflectionId=self.id
+                "X_AVM-DE_OnTel:1","SetDeflectionEnable", NewDeflectionId=self.id, NewEnable=new_state
             )
         except FritzSecurityError:
             _LOGGER.error(
