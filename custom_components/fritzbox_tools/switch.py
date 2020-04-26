@@ -207,11 +207,11 @@ class FritzBoxPortSwitch(SwitchDevice):
         from fritzconnection.core.exceptions import FritzConnectionException
 
         try:
-            self.port_mapping = self.fritzbox_tools.connection.call_action(
+            self.port_mapping = await self.hass.async_add_executor_job(lambda: self.fritzbox_tools.connection.call_action(
                 self.connection_type,
                 "GetGenericPortMappingEntry",
                 NewPortMappingIndex=self._idx,
-            )
+            ))
             _LOGGER.debug(self.port_mapping)
             self._is_on = self.port_mapping["NewEnabled"] is True
             self._is_available = True
@@ -276,9 +276,9 @@ class FritzBoxPortSwitch(SwitchDevice):
 
         self.port_mapping["NewEnabled"] = "1" if turn_on else "0"
         try:
-            self.fritzbox_tools.connection.call_action(
+            self.hass.async_add_executor_job(lambda: self.fritzbox_tools.connection.call_action(
                 self.connection_type, "AddPortMapping", **self.port_mapping
-            )
+            ))
         except FritzSecurityError:
             _LOGGER.error(
                 "Authorization Error: Please check the provided credentials and verify that you can log into "
@@ -293,6 +293,7 @@ class FritzBoxPortSwitch(SwitchDevice):
             return False
         else:
             return True
+
 
 class FritzBoxDeflectionSwitch(SwitchDevice):
     """Defines a FRITZ!Box Tools PortForward switch."""
@@ -345,8 +346,11 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
         from fritzconnection.core.exceptions import FritzConnectionException
 
         try:
+            resp = await self.hass.async_add_executor_job(
+                lambda: self.fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetDeflections")
+            )
             self.dict_of_deflection = xmltodict.parse(
-                self.fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetDeflections")["NewDeflectionList"]
+                resp["NewDeflectionList"]
             )["List"]["Item"]
             if isinstance(self.dict_of_deflection, list):
                 self.dict_of_deflection = self.dict_of_deflection[self.id]
@@ -417,9 +421,9 @@ class FritzBoxDeflectionSwitch(SwitchDevice):
 
         new_state = '1' if turn_on else '0'
         try:
-            self.fritzbox_tools.connection.call_action(
+            self.hass.async_add_executor_job(lambda: self.fritzbox_tools.connection.call_action(
                 "X_AVM-DE_OnTel:1","SetDeflectionEnable", NewDeflectionId=self.id, NewEnable=new_state
-            )
+            ))
         except FritzSecurityError:
             _LOGGER.error(
                 "Authorization Error: Please check the provided credentials and verify that you can log into "
@@ -506,7 +510,7 @@ class FritzBoxProfileSwitch(SwitchDevice):
         return self._is_available
 
     async def _async_fetch_update(self):
-        await self.fritzbox_tools.async_update_profiles()
+        await self.fritzbox_tools.async_update_profiles(self.hass)
         try:
             devices = self.fritzbox_tools.profile_switch.get_devices()
             for device in devices:
@@ -569,7 +573,7 @@ class FritzBoxProfileSwitch(SwitchDevice):
         else:
             state = [[self.device["id1"], self.id_off]]
         try:
-            self.fritzbox_tools.profile_switch.set_profiles(state)
+            await self.hass.async_add_executor_job(lambda: self.fritzbox_tools.profile_switch.set_profiles(state))
         except Exception:
             _LOGGER.error(
                 f"Home Assistant cannot call the wished service on the FRITZ!Box.",
@@ -578,6 +582,7 @@ class FritzBoxProfileSwitch(SwitchDevice):
             return False
         else:
             return True
+
 
 class FritzBoxWifiSwitch(SwitchDevice):
     """Defines a FRITZ!Box Tools Wifi switch."""
@@ -622,9 +627,9 @@ class FritzBoxWifiSwitch(SwitchDevice):
         from fritzconnection.core.exceptions import FritzConnectionException
 
         try:
-            wifi_info = self._fritzbox_tools.connection.call_action(
+            wifi_info = await self.hass.async_add_executor_job(lambda: self._fritzbox_tools.connection.call_action(
                 f"WLANConfiguration:{self._network_num}", "GetInfo"
-            )
+            ))
             _LOGGER.debug("Guest WiFi GetInfo:")
             _LOGGER.debug(wifi_info)
             self._is_on = True if wifi_info["NewStatus"] == "Up" else False
@@ -682,9 +687,9 @@ class FritzBoxWifiSwitch(SwitchDevice):
         from fritzconnection.core.exceptions import FritzSecurityError, FritzConnectionException
 
         try:
-            self._fritzbox_tools.connection.call_action(
+            self.hass.async_add_executor_job(lambda: self._fritzbox_tools.connection.call_action(
                 f"WLANConfiguration{self._network_num}", "SetEnable", NewEnable="1" if turn_on else "0"
-            )
+            ))
         except FritzSecurityError:
             _LOGGER.error(
                 "Authorization Error: Please check the provided credentials and verify that you can log into "

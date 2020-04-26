@@ -63,7 +63,7 @@ class FritzBoxConnectivitySensor(BinarySensorDevice):
         self._is_on = True
         try:
             status = self.fritzbox_tools.fritzstatus
-            self._is_on = status.is_connected
+            self._is_on = await self.hass.async_add_executor_job(lambda: status.is_connected)
             self._is_available = True
             for attr in [
                 "modelname",
@@ -72,7 +72,7 @@ class FritzBoxConnectivitySensor(BinarySensorDevice):
                 "uptime",
                 "str_uptime",
             ]:
-                self._attributes[attr] = getattr(status, attr)
+                self._attributes[attr] = await self.hass.async_add_executor_job(lambda: getattr(status, attr))
         except Exception:
             _LOGGER.error("Error getting the state from the FRITZ!Box", exc_info=True)
             self._is_available = False

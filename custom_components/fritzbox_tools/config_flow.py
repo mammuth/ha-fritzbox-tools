@@ -113,7 +113,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             username = user_input.get(CONF_USERNAME)
             password = user_input.get(CONF_PASSWORD)
 
-            self.fritz_tools = FritzBoxTools(
+            self.fritz_tools = await self.hass.async_add_executor_job(lambda: FritzBoxTools(
                 host=host,
                 port=port,
                 username=username,
@@ -121,8 +121,8 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 profile_on=None,
                 profile_off=None,
                 device_list=[]
-            )
-            success, error = await self.fritz_tools.is_ok()
+            ))
+            success, error = await self.hass.async_add_executor_job(self.fritz_tools.is_ok)
 
             if not success:
                 errors["base"] = error
@@ -204,7 +204,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         if isinstance(devices, str):
             devices = devices.replace(" ", "").split(",")
 
-        fritz_tools = FritzBoxTools(
+        fritz_tools = await self.hass.async_add_executor_job(lambda: FritzBoxTools(
             host=host,
             port=port,
             username=username,
@@ -212,8 +212,8 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             profile_on=None,
             profile_off=None,
             device_list=[],
-        )
-        success, error = await fritz_tools.is_ok()
+        ))
+        success, error = await self.hass.async_add_executor_job(self.fritz_tools.is_ok)
 
         if not success:
             _LOGGER.error('Import of config failed. Check your fritzbox credentials',error)

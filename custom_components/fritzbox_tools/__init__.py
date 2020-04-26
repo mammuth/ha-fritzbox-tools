@@ -97,7 +97,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
     use_port = entry.data.get(CONF_USE_PORT, DEFAULT_USE_PORT)
     use_deflections = entry.data.get(CONF_USE_DEFLECTIONS, DEFAULT_USE_DEFLECTIONS)
 
-    fritz_tools = FritzBoxTools(
+    fritz_tools = await hass.async_add_executor_job(lambda: FritzBoxTools(
         host=host,
         port=port,
         username=username,
@@ -105,11 +105,11 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         profile_on=profile_on,
         profile_off=profile_off,
         device_list=device_list,
-        use_wifi = use_wifi,
-        use_deflections = use_deflections,
-        use_port = use_port,
-        use_devices = use_devices,
-    )
+        use_wifi=use_wifi,
+        use_deflections=use_deflections,
+        use_port=use_port,
+        use_devices=use_devices,
+    ))
 
     hass.data.setdefault(DOMAIN, {})[DATA_FRITZ_TOOLS_INSTANCE] = fritz_tools
 
@@ -139,6 +139,10 @@ async def async_unload_entry(hass: HomeAssistantType, entry: ConfigType) -> bool
 
 
 class FritzBoxTools(object):
+    """
+    Attention: The initialization of the class performs sync I/O. If you're calling this from within Home Assistant,
+    wrap it in await self.hass.async_add_executor_job(lambda: FritzBoxTools(...))
+    """
     def __init__(
         self,
         password,
@@ -185,19 +189,24 @@ class FritzBoxTools(object):
         self.use_deflections = use_deflections
         self.use_devices = use_devices
 
-    async def async_update_profiles(self):
+        self._unique_id = self.connection.call_action("DeviceInfo:1", "GetInfo")[
+            "NewSerialNumber"
+        ]
+        self._device_info = self._fetch_device_info()
+
+    async def async_update_profiles(self, hass):
         if time.time() > self.profile_last_updated + 5:
             # do not update profiles too often (takes too long...)!
-            await asyncio.coroutine(self.profile_switch.fetch_profiles)()
-            await asyncio.coroutine(self.profile_switch.fetch_devices)()
-            await asyncio.coroutine(self.profile_switch.fetch_device_profiles)()
+            await hass.async_add_executor_job(self.profile_switch.fetch_profiles)
+            await hass.async_add_executor_job(self.profile_switch.fetch_devices)
+            await hass.async_add_executor_job(self.profile_switch.fetch_device_profiles)
             self.profile_last_updated = time.time()
 
     def service_reconnect_fritzbox(self, call) -> None:
         _LOGGER.info("Reconnecting the fritzbox.")
         self.connection.reconnect()
 
-    async def is_ok(self):
+    def is_ok(self):
         # TODO for future: do more of the async_setup_entry checks right here
 
         from fritzconnection.core.exceptions import FritzConnectionException
@@ -212,13 +221,13 @@ class FritzBoxTools(object):
 
     @property
     def unique_id(self):
-        serial = self.connection.call_action("DeviceInfo:1", "GetInfo")[
-            "NewSerialNumber"
-        ]
-        return serial
+        return self._unique_id
 
     @property
     def device_info(self):
+        return self._device_info
+
+    def _fetch_device_info(self):
         info = self.connection.call_action("DeviceInfo:1", "GetInfo")
         return {
             "identifiers": {
