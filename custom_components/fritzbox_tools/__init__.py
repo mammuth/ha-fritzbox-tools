@@ -194,12 +194,12 @@ class FritzBoxTools(object):
         ]
         self._device_info = self._fetch_device_info()
 
-    async def async_update_profiles(self):
+    async def async_update_profiles(self, hass):
         if time.time() > self.profile_last_updated + 5:
             # do not update profiles too often (takes too long...)!
-            await asyncio.coroutine(self.profile_switch.fetch_profiles)()
-            await asyncio.coroutine(self.profile_switch.fetch_devices)()
-            await asyncio.coroutine(self.profile_switch.fetch_device_profiles)()
+            await hass.async_add_executor_job(self.profile_switch.fetch_profiles)
+            await hass.async_add_executor_job(self.profile_switch.fetch_devices)
+            await hass.async_add_executor_job(self.profile_switch.fetch_device_profiles)
             self.profile_last_updated = time.time()
 
     def service_reconnect_fritzbox(self, call) -> None:

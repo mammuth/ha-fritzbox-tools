@@ -510,7 +510,7 @@ class FritzBoxProfileSwitch(SwitchDevice):
         return self._is_available
 
     async def _async_fetch_update(self):
-        await self.hass.async_add_executor_job(self.fritzbox_tools.async_update_profiles)
+        await self.fritzbox_tools.async_update_profiles(self.hass)
         try:
             devices = self.fritzbox_tools.profile_switch.get_devices()
             for device in devices:
