@@ -7,7 +7,11 @@ import xmltodict
 
 from collections import Counter, defaultdict
 
-from homeassistant.components.switch import SwitchEntity, ENTITY_ID_FORMAT
+try:
+    from homeassistant.components.switch import ENTITY_ID_FORMAT, SwitchEntity
+except ImportError:
+    from homeassistant.components.switch import ENTITY_ID_FORMAT, SwitchDevice as SwitchEntity
+
 from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.util import slugify

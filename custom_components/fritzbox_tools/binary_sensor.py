@@ -3,7 +3,11 @@ import logging
 from collections import defaultdict
 from datetime import timedelta
 
-from homeassistant.components.binary_sensor import ENTITY_ID_FORMAT, BinarySensorEntity
+try:
+    from homeassistant.components.binary_sensor import ENTITY_ID_FORMAT, BinarySensorEntity
+except ImportError:
+    from homeassistant.components.binary_sensor import ENTITY_ID_FORMAT, BinarySensorDevice as BinarySensorEntity
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.typing import HomeAssistantType
 
