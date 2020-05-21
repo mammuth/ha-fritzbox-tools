@@ -3,7 +3,11 @@ import logging
 from collections import defaultdict
 from datetime import timedelta
 
-from homeassistant.components.binary_sensor import ENTITY_ID_FORMAT, BinarySensorDevice
+try:
+    from homeassistant.components.binary_sensor import ENTITY_ID_FORMAT, BinarySensorEntity
+except ImportError:
+    from homeassistant.components.binary_sensor import ENTITY_ID_FORMAT, BinarySensorDevice as BinarySensorEntity
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.typing import HomeAssistantType
 
@@ -24,7 +28,7 @@ async def async_setup_entry(
     return True
 
 
-class FritzBoxConnectivitySensor(BinarySensorDevice):
+class FritzBoxConnectivitySensor(BinarySensorEntity):
     name = "FRITZ!Box Connectivity"
     entity_id = ENTITY_ID_FORMAT.format("fritzbox_connectivity")
     icon = "mdi:router-wireless"
