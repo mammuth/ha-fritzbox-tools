@@ -29,6 +29,7 @@ from .const import (
     DEFAULT_PROFILE_ON,
     DOMAIN,
     SERVICE_RECONNECT,
+    SERVICE_REBOOT,
     SUPPORTED_DOMAINS,
     CONF_USE_WIFI,
     CONF_USE_DEVICES,
@@ -116,6 +117,9 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
     hass.services.async_register(
         DOMAIN, SERVICE_RECONNECT, fritz_tools.service_reconnect_fritzbox
     )
+    hass.services.async_register(
+        DOMAIN, SERVICE_REBOOT, fritz_tools.service_reboot_fritzbox
+    )
 
     # Load the other platforms like switch
     for domain in SUPPORTED_DOMAINS:
@@ -129,6 +133,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
 async def async_unload_entry(hass: HomeAssistantType, entry: ConfigType) -> bool:
     """Unload FRITZ!Box Tools config entry."""
     hass.services.async_remove(DOMAIN, SERVICE_RECONNECT)
+    hass.services.async_remove(DOMAIN, SERVICE_REBOOT)
 
     for domain in SUPPORTED_DOMAINS:
         await hass.config_entries.async_forward_entry_unload(entry, domain)
@@ -205,6 +210,10 @@ class FritzBoxTools(object):
     def service_reconnect_fritzbox(self, call) -> None:
         _LOGGER.info("Reconnecting the fritzbox.")
         self.connection.reconnect()
+
+    def service_reboot_fritzbox(self, call) -> None:
+        _LOGGER.info("Rebooting the fritzbox.")
+        self.connection.call_action("DeviceConfig1", "Reboot")
 
     def is_ok(self):
         # TODO for future: do more of the async_setup_entry checks right here

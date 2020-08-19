@@ -90,6 +90,7 @@ Note: **due to the underlying library, the update routine is not the fastest. Th
 #### Exposed entities
 
 - `service.reconnect`  Reconnect to your ISP
+- `service.reboot`  Reboot your FRITZ!Box
 - `switch.fritzbox_wifi`  Turns on/off wifi
 - `switch.fritzbox_wifi_5ghz`  Turns on/off wifi (5GHz)
 - `switch.fritzbox_guest_wifi`  Turns on/off guest wifi
@@ -101,7 +102,7 @@ Note: **due to the underlying library, the update routine is not the fastest. Th
 ## Example Automations and Scripts
 **Script: Reconnect / get new IP**
 
-The following script can be used to easily add a reconnect button to your UI.
+The following script can be used to easily add a reconnect button to your UI. If you want to reboot your fritzbox, you can use fritzbox_tools.reboot instead.
 
 ```yaml
 fritz_box_reconnect:
