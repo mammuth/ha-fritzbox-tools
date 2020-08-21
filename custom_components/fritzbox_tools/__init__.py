@@ -164,6 +164,8 @@ class FritzBoxTools(object):
             self.profile_switch = {profile: FritzProfileSwitch(
                 "http://" + host, username, password, profile
             ) for profile in profile_list}
+        else:
+            self.profile_switch={}
 
         self.fritzstatus = FritzStatus(fc=self.connection)
         self.ha_ip = get_local_ip()
