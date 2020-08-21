@@ -13,12 +13,10 @@
               }
             },
             "setup_devices": {
-                "title": "Setup FRITZ!Box Tools - device settings",
-                "description": "Device profiles need a list of devices.\nleave it empty if you don't need it.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
+                "title": "Setup FRITZ!Box Tools - profile settings",
+                "description": "Device profiles needs at least one profile.\nleave it empty if you don't need it.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
                 "data": {
-                    "profile_on": "Device profiles: Profile on",
-                    "profile_off": "Device profiles: Profile off",
-                    "devices": "Device profiles: comma seperated list of devices"
+                    "profiles": "Device profiles: Comma seperated list of Profiles"
                 }
               },
               "start_config": {

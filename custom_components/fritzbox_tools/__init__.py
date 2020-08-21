@@ -9,7 +9,6 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    CONF_DEVICES,
     CONF_HOST,
     CONF_PASSWORD,
     CONF_PORT,
@@ -19,14 +18,10 @@ from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 from homeassistant.util import get_local_ip
 
 from .const import (
-    CONF_PROFILE_OFF,
-    CONF_PROFILE_ON,
-    DEFAULT_DEVICES,
+    DEFAULT_PROFILES,
     DEFAULT_HOST,
     DEFAULT_USERNAME,
     DEFAULT_PORT,
-    DEFAULT_PROFILE_OFF,
-    DEFAULT_PROFILE_ON,
     DOMAIN,
     SERVICE_RECONNECT,
     SERVICE_REBOOT,
@@ -35,6 +30,7 @@ from .const import (
     CONF_USE_DEVICES,
     CONF_USE_DEFLECTIONS,
     CONF_USE_PORT,
+    CONF_PROFILES,
     DEFAULT_USE_WIFI,
     DEFAULT_USE_DEVICES,
     DEFAULT_USE_DEFLECTIONS,
@@ -55,9 +51,7 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_PORT): cv.port,
                 vol.Required(CONF_USERNAME): cv.string,
                 vol.Required(CONF_PASSWORD): cv.string,
-                vol.Optional(CONF_DEVICES): vol.All(cv.ensure_list, [cv.string]),
-                vol.Optional(CONF_PROFILE_ON): cv.string,
-                vol.Optional(CONF_PROFILE_OFF): cv.string,
+                vol.Optional(CONF_PROFILES): vol.All(cv.ensure_list, [cv.string]),
                 vol.Optional(CONF_USE_DEVICES): cv.string,
                 vol.Optional(CONF_USE_PORT): cv.string,
                 vol.Optional(CONF_USE_WIFI): cv.string,
@@ -90,9 +84,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
     port = entry.data.get(CONF_PORT, DEFAULT_PORT)
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
-    profile_off = entry.data.get(CONF_PROFILE_OFF, DEFAULT_PROFILE_OFF)
-    profile_on = entry.data.get(CONF_PROFILE_ON, DEFAULT_PROFILE_ON)
-    device_list = entry.data.get(CONF_DEVICES, DEFAULT_DEVICES)
+    profile_list = entry.data.get(CONF_PROFILES, DEFAULT_PROFILES)
     use_devices = entry.data.get(CONF_USE_DEVICES, DEFAULT_USE_DEVICES)
     use_wifi = entry.data.get(CONF_USE_WIFI, DEFAULT_USE_WIFI)
     use_port = entry.data.get(CONF_USE_PORT, DEFAULT_USE_PORT)
@@ -103,9 +95,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         port=port,
         username=username,
         password=password,
-        profile_on=profile_on,
-        profile_off=profile_off,
-        device_list=device_list,
+        profile_list=profile_list,
         use_wifi=use_wifi,
         use_deflections=use_deflections,
         use_port=use_port,
@@ -154,9 +144,7 @@ class FritzBoxTools(object):
         username = DEFAULT_USERNAME,
         host = DEFAULT_HOST,
         port=DEFAULT_PORT,
-        profile_on = DEFAULT_PROFILE_ON,
-        profile_off = DEFAULT_PROFILE_OFF,
-        device_list = DEFAULT_DEVICES,
+        profile_list = DEFAULT_PROFILES,
         use_port = DEFAULT_USE_PORT,
         use_deflections = DEFAULT_USE_DEFLECTIONS,
         use_wifi = DEFAULT_USE_WIFI,
@@ -165,24 +153,21 @@ class FritzBoxTools(object):
         # pylint: disable=import-error
         from fritzconnection import FritzConnection
         from fritzconnection.lib.fritzstatus import FritzStatus
-        from fritz_switch_profiles import FritzProfileSwitch
+        from fritzprofiles import FritzProfileSwitch
 
         # general timeout for all requests to the router. Some calls need quite some time.
         self.connection = FritzConnection(
             address=host, port=port, user=username, password=password, timeout=30.0
         )
 
-        if device_list != DEFAULT_DEVICES:
-            self.profile_switch = FritzProfileSwitch(
-                "http://" + host, username, password
-            )
+        if profile_list != DEFAULT_PROFILES:
+            self.profile_switch = {profile: FritzProfileSwitch(
+                "http://" + host, username, password, profile
+            ) for profile in profile_list}
 
         self.fritzstatus = FritzStatus(fc=self.connection)
         self.ha_ip = get_local_ip()
-        self.profile_on = profile_on
-        self.profile_off = profile_off
-        self.profile_last_updated = time.time()
-        self.device_list = device_list
+        self.profile_list = profile_list
 
         self.username = username
         self.password = password
@@ -198,14 +183,6 @@ class FritzBoxTools(object):
             "NewSerialNumber"
         ]
         self._device_info = self._fetch_device_info()
-
-    async def async_update_profiles(self, hass):
-        if time.time() > self.profile_last_updated + 5:
-            # do not update profiles too often (takes too long...)!
-            await hass.async_add_executor_job(self.profile_switch.fetch_profiles)
-            await hass.async_add_executor_job(self.profile_switch.fetch_devices)
-            await hass.async_add_executor_job(self.profile_switch.fetch_device_profiles)
-            self.profile_last_updated = time.time()
 
     def service_reconnect_fritzbox(self, call) -> None:
         _LOGGER.info("Reconnecting the fritzbox.")

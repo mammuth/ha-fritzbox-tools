@@ -40,12 +40,10 @@ fritzbox_tools:
   host: "192.168.178.1"  # required
   username: "home-assistant"  # required (create one at `System > FRITZ!Box Benutzer` on your router)
   password: "yourfritzboxpassword"  # required
-  devices: # Optional. Needed if you want to control the profiles of your network devices.
-    - "Helens-iPhone"
-    - "Aarons-MacBook-Air"
+  profiles: # Optional. Needed if you want to control the profiles of your network devices.
+    - "Helen"
+    - "Aaron"
     - "..."
-  profile_on: "Standard"  # Optional. Use if the names of your "Zugangsprofile" are different as the defaults.
-  profile_off: "Gesperrt"  # Optional.
   use_wifi: True # Optional, default True: if False no wifi switches will be exposed
   use_port: True  # Optional, default True: if False no port switches will be exposed
   use_devices: True  # Optional, default True: if False no device switches will be exposed, redundant if devices is not specified
@@ -76,16 +74,15 @@ Note: **Currently only port forwards for the device which is running HA are supp
 
 ### Device profiles**
 
-You can switch between two device profiles ("Zugangsprofile") within Home Assistant for the devices within your network.
+You can switch the online time of device profiles ("Zugangsprofile") within Home Assistant.
 
 Requirements:
-- Add the (FRITZ!Box) names of the devices you want to control to `device_list`.
-- Optionally set `profile_on` and `profile_off` to the names of your profiles (default: "Standard" and "Gesperrt") in the configuration of `fritzbox_tools`
+- In the FRITZ!Box: Create profiles and assign devices to those profiles.
+- Add the (FRITZ!Box) names of the profiles you want to control to `profile_list`.
 
-The device profiles will be exposed as switches in your HA installation (search for `fritzbox_profile` in your entity page to find the IDs). If the switch is toggled on, the profile you specified in `profile_on` is activated, if the switch is off, `profile_off` is activated.
+The device profiles will be exposed as switches in your HA installation (search for `fritzbox_profile` in your entity page to find the IDs). 
 
-Note: **due to the underlying library, the update routine is not the fastest. This might result in warnings.**
-
+If the switch is toggled on, the devices assigned to the specific profile have internet access. If the switch is toggled off, the devices can not access the internet.
 
 #### Exposed entities
 
@@ -96,7 +93,7 @@ Note: **due to the underlying library, the update routine is not the fastest. Th
 - `switch.fritzbox_guest_wifi`  Turns on/off guest wifi
 - `binary_sensor.fritzbox_connectivity`  online/offline depending on your internet connection
 - `switch.fritzbox_portforward_[description of your forward]` for each of your port forwards for your HA device
-- `switch.fritzbox_profile_[name of your device]` for each device in your fritzbox network
+- `switch.fritzbox_profile_[name of your profile]` for each profile you have set
 
 
 ## Example Automations and Scripts

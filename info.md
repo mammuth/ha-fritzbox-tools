@@ -5,7 +5,7 @@ This custom component allows you to get more out of your FRITZ!Box
 
 **Features:**
 
-- Switch between device profiles ("Zugangsprofile") for devices in your network
+- Switch internet access of device profiles ("Zugangsprofile")
 - Turn on/off call deflections ("Rufumleitung")
 - Manage port forwardings for your Home Assistant device
 - Turn on/off wifi and guest wifi
