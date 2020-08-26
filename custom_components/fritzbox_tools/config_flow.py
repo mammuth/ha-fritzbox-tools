@@ -193,10 +193,11 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         This will execute for any complete
         configuration.
         """
+        _LOGGER.debug("start step import_config")
         self.import_schema = CONFIG_SCHEMA
 
         errors = {}
-
+        
         host = import_config.get(CONF_HOST, DEFAULT_HOST)
         port = import_config.get(CONF_PORT, DEFAULT_PORT)
         username = import_config.get(CONF_USERNAME)
@@ -205,6 +206,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
 
         if isinstance(profiles, str):
             profiles = profiles.replace(" ", "").split(",")
+            
 
         fritz_tools = await self.hass.async_add_executor_job(lambda: FritzBoxTools(
             host=host,
@@ -213,7 +215,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             password=password,
             profile_list=profiles,
         ))
-        success, error = await self.hass.async_add_executor_job(self.fritz_tools.is_ok)
+        success, error = await self.hass.async_add_executor_job(fritz_tools.is_ok)
 
         if not success:
             _LOGGER.error('Import of config failed. Check your fritzbox credentials',error)
