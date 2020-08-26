@@ -176,12 +176,15 @@ class FritzBoxTools(object):
             self._device_info = self._fetch_device_info()
             self.success = True
             self.error = False
-        except PermissionError:
-            self.success = False
-            self.error = "connection_error_profiles"
         except FritzConnectionException:
             self.success = False
             self.error = "connection_error"
+        except PermissionError:
+            self.success = False
+            self.error = "connection_error_profiles"
+        except AttributeError:
+            self.success = False
+            self.error = "profile_not_found"
             
             
         self.ha_ip = get_local_ip()    

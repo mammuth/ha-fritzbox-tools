@@ -166,7 +166,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         errors = {}
         if not success:
             errors["base"] = error
-            return await self._show_setup_form_init(errors)
+            return await self._show_setup_form_devices(errors)
 
         return self.async_create_entry(
             title="FRITZ!Box Tools",
