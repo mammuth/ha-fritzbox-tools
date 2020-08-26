@@ -154,21 +154,37 @@ class FritzBoxTools(object):
         from fritzconnection import FritzConnection
         from fritzconnection.lib.fritzstatus import FritzStatus
         from fritzprofiles import FritzProfileSwitch
-
+        from fritzconnection.core.exceptions import FritzConnectionException
+        
         # general timeout for all requests to the router. Some calls need quite some time.
-        self.connection = FritzConnection(
-            address=host, port=port, user=username, password=password, timeout=30.0
-        )
+        
+        try:
+            self.connection = FritzConnection(
+                address=host, port=port, user=username, password=password, timeout=30.0
+            )
+            if profile_list != DEFAULT_PROFILES:
+                self.profile_switch = {profile: FritzProfileSwitch(
+                    "http://" + host, username, password, profile
+                ) for profile in profile_list}
+            else:
+                self.profile_switch={}
 
-        if profile_list != DEFAULT_PROFILES:
-            self.profile_switch = {profile: FritzProfileSwitch(
-                "http://" + host, username, password, profile
-            ) for profile in profile_list}
-        else:
-            self.profile_switch={}
-
-        self.fritzstatus = FritzStatus(fc=self.connection)
-        self.ha_ip = get_local_ip()
+            self.fritzstatus = FritzStatus(fc=self.connection)
+            self._unique_id = self.connection.call_action("DeviceInfo:1", "GetInfo")[
+                "NewSerialNumber"
+            ]
+            self._device_info = self._fetch_device_info()
+            self.success = True
+            self.error = False
+        except PermissionError:
+            self.success = False
+            self.error = "connection_error_profiles"
+        except FritzConnectionException:
+            self.success = False
+            self.error = "connection_error"
+            
+            
+        self.ha_ip = get_local_ip()    
         self.profile_list = profile_list
 
         self.username = username
@@ -181,11 +197,6 @@ class FritzBoxTools(object):
         self.use_deflections = use_deflections
         self.use_devices = use_devices
 
-        self._unique_id = self.connection.call_action("DeviceInfo:1", "GetInfo")[
-            "NewSerialNumber"
-        ]
-        self._device_info = self._fetch_device_info()
-
     def service_reconnect_fritzbox(self, call) -> None:
         _LOGGER.info("Reconnecting the fritzbox.")
         self.connection.reconnect()
@@ -195,18 +206,8 @@ class FritzBoxTools(object):
         self.connection.call_action("DeviceConfig1", "Reboot")
 
     def is_ok(self):
-        # TODO for future: do more of the async_setup_entry checks right here
-
-        from fritzconnection.core.exceptions import FritzConnectionException
-
-        try:
-            _ = self.connection.call_action(
-                "Layer3Forwarding:1", "GetDefaultConnectionService"
-            )["NewDefaultConnectionService"]
-            return True, ""
-        except FritzConnectionException:
-            return False, "connection_error"
-
+        return self.success, self.error
+        
     @property
     def unique_id(self):
         return self._unique_id

@@ -97,30 +97,30 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         return await self._show_setup_form_init()
 
     async def async_step_start_config(self, user_input=None):
-            if user_input is None:
-                return await self._show_setup_form_init()
+        if user_input is None:
+            return await self._show_setup_form_init()
 
-            errors = {}
+        errors = {}
 
-            host = user_input.get(CONF_HOST, DEFAULT_HOST)
-            port = user_input.get(CONF_PORT, DEFAULT_PORT)
-            username = user_input.get(CONF_USERNAME)
-            password = user_input.get(CONF_PASSWORD)
+        host = user_input.get(CONF_HOST, DEFAULT_HOST)
+        port = user_input.get(CONF_PORT, DEFAULT_PORT)
+        username = user_input.get(CONF_USERNAME)
+        password = user_input.get(CONF_PASSWORD)
 
-            self.fritz_tools = await self.hass.async_add_executor_job(lambda: FritzBoxTools(
-                host=host,
-                port=port,
-                username=username,
-                password=password,
-                profile_list=[]
-            ))
-            success, error = await self.hass.async_add_executor_job(self.fritz_tools.is_ok)
+        self.fritz_tools = await self.hass.async_add_executor_job(lambda: FritzBoxTools(
+            host=host,
+            port=port,
+            username=username,
+            password=password,
+            profile_list=[]
+        ))
+        success, error = await self.hass.async_add_executor_job(self.fritz_tools.is_ok)
 
-            if not success:
-                errors["base"] = error
-                return await self._show_setup_form_init(errors)
+        if not success:
+            errors["base"] = error
+            return await self._show_setup_form_init(errors)
 
-            return await self._show_setup_form_options(errors)
+        return await self._show_setup_form_options(errors)
 
     async def async_step_setup_options(self, user_input=None):
         self._use_port = user_input.get(CONF_USE_PORT,DEFAULT_USE_PORT)
@@ -153,6 +153,20 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         profiles = user_input.get(CONF_PROFILES,DEFAULT_PROFILES)
         if isinstance(profiles, str):
             profiles = profiles.replace(' ', '').split(',')
+        
+        self.fritz_tools = await self.hass.async_add_executor_job(lambda: FritzBoxTools(
+            host=self.fritz_tools.host,
+            port=self.fritz_tools.port,
+            username=self.fritz_tools.username,
+            password=self.fritz_tools.password,
+            profile_list=profiles,
+        ))
+        success, error = await self.hass.async_add_executor_job(self.fritz_tools.is_ok)
+        
+        errors = {}
+        if not success:
+            errors["base"] = error
+            return await self._show_setup_form_init(errors)
 
         return self.async_create_entry(
             title="FRITZ!Box Tools",
@@ -197,7 +211,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             port=port,
             username=username,
             password=password,
-            profile_list=[],
+            profile_list=profiles,
         ))
         success, error = await self.hass.async_add_executor_job(self.fritz_tools.is_ok)
 

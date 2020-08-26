@@ -31,7 +31,8 @@
             }
         },
         "error": {
-            "connection_error": "Failed to connect to FRITZ!Box. Check your username and password."
+            "connection_error": "Failed to connect to FRITZ!Box. Check your username and password.",
+            "connection_error_profiles": "Failed to connect to FRITZ!Box. Check your username and password. Profile switches only work if login via user and password is enabled in the FRITZ!Box"
         },
         "abort": {
             "single_instance_allowed": "Only a single configuration of FRITZ!Box Tools is allowed.",
