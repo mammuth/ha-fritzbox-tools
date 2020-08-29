@@ -6,7 +6,7 @@ from homeassistant import config_entries
 from .const import (
     DOMAIN,
     CONF_USE_DEFLECTIONS,
-    CONF_USE_DEVICES,
+    CONF_USE_PROFILES,
     CONF_USE_WIFI,
     CONF_USE_PORT,
     CONF_PROFILES,
@@ -16,7 +16,7 @@ from .const import (
     DEFAULT_PORT,
     DEFAULT_USE_DEFLECTIONS,
     DEFAULT_USE_WIFI,
-    DEFAULT_USE_DEVICES,
+    DEFAULT_USE_PROFILES,
     DEFAULT_USE_PORT,
     SUPPORTED_DOMAINS,
 )
@@ -62,10 +62,10 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             errors=errors or {},
         )
 
-    async def _show_setup_form_devices(self, errors=None):
+    async def _show_setup_form_profiles(self, errors=None):
         """Show the setup form to the user."""
         return self.async_show_form(
-            step_id="setup_devices",
+            step_id="setup_profiles",
             data_schema=vol.Schema(
                 {
                     vol.Optional(CONF_PROFILES): str,
@@ -82,7 +82,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 {
                     vol.Required(CONF_USE_WIFI, default=DEFAULT_USE_WIFI): bool,
                     vol.Required(CONF_USE_PORT, default=DEFAULT_USE_PORT): bool,
-                    vol.Required(CONF_USE_DEVICES, default=DEFAULT_USE_DEVICES): bool,
+                    vol.Required(CONF_USE_PROFILES, default=DEFAULT_USE_PROFILES): bool,
                     vol.Required(CONF_USE_DEFLECTIONS, default=DEFAULT_USE_DEFLECTIONS): bool,
                 }
             ),
@@ -126,11 +126,11 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         self._use_port = user_input.get(CONF_USE_PORT,DEFAULT_USE_PORT)
         self._use_deflections = user_input.get(CONF_USE_DEFLECTIONS,DEFAULT_USE_DEFLECTIONS)
         self._use_wifi = user_input.get(CONF_USE_WIFI,DEFAULT_USE_WIFI)
-        self._use_devices = user_input.get(CONF_USE_DEVICES, DEFAULT_USE_DEVICES)
+        self._use_profiles = user_input.get(CONF_USE_PROFILES, DEFAULT_USE_PROFILES)
 
-        if self._use_devices:
+        if self._use_profiles:
             errors = {}
-            return await self._show_setup_form_devices(errors)
+            return await self._show_setup_form_profiles(errors)
         else:
             profiles = []
             return self.async_create_entry(
@@ -144,15 +144,15 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                     CONF_USE_WIFI: self._use_wifi,
                     CONF_USE_DEFLECTIONS: self._use_deflections,
                     CONF_USE_PORT: self._use_port,
-                    CONF_USE_DEVICES: self._use_devices,
+                    CONF_USE_PROFILES: self._use_profiles,
                 },
             )
 
 
-    async def async_step_setup_devices(self, user_input=None):
+    async def async_step_setup_profiles(self, user_input=None):
         profiles = user_input.get(CONF_PROFILES,DEFAULT_PROFILES)
         if isinstance(profiles, str):
-            profiles = profiles.replace(' ', '').split(',')
+            profiles = profiles.replace(', ', ',').split(',')
         
         self.fritz_tools = await self.hass.async_add_executor_job(lambda: FritzBoxTools(
             host=self.fritz_tools.host,
@@ -166,7 +166,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         errors = {}
         if not success:
             errors["base"] = error
-            return await self._show_setup_form_devices(errors)
+            return await self._show_setup_form_profiles(errors)
 
         return self.async_create_entry(
             title="FRITZ!Box Tools",
@@ -179,7 +179,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 CONF_USE_WIFI: self._use_wifi,
                 CONF_USE_DEFLECTIONS: self._use_deflections,
                 CONF_USE_PORT: self._use_port,
-                CONF_USE_DEVICES: self._use_devices,
+                CONF_USE_PROFILES: self._use_profiles,
             },
         )
 
@@ -231,6 +231,6 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 CONF_USE_WIFI: DEFAULT_USE_WIFI,
                 CONF_USE_DEFLECTIONS: DEFAULT_USE_DEFLECTIONS,
                 CONF_USE_PORT: DEFAULT_USE_PORT,
-                CONF_USE_DEVICES: DEFAULT_USE_DEVICES,
+                CONF_USE_PROFILES: DEFAULT_USE_PROFILES,
             },
         )

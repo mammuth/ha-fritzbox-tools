@@ -127,11 +127,11 @@ async def async_setup_entry(
         hass.async_add_executor_job(_create_port_switches)
     if fritzbox_tools.use_deflections:
         hass.async_add_executor_job(_create_deflection_switches)
-    if fritzbox_tools.use_devices:
+    if fritzbox_tools.use_profiles:
         hass.async_add_executor_job(_create_profile_switches)
 
     _LOGGER.debug(f"use_wifi: {fritzbox_tools.use_wifi}")
-    _LOGGER.debug(f"use_devices: {fritzbox_tools.use_devices}")
+    _LOGGER.debug(f"use_profiles: {fritzbox_tools.use_profiles}")
     _LOGGER.debug(f"use_deflections: {fritzbox_tools.use_deflections}")
     _LOGGER.debug(f"use_port: {fritzbox_tools.use_port}")
 
@@ -438,11 +438,11 @@ class FritzBoxProfileSwitch(SwitchEntity):
         self.profile = profile
         self.profile_switch = self.fritzbox_tools.profile_switch[self.profile]
 
-        self._name = f"Device Profile {self.profile}"
+        self._name = f"Access profile {self.profile}"
         id = f"fritzbox_profile_{self.profile}"
         self.entity_id = ENTITY_ID_FORMAT.format(slugify(id))
 
-        self._is_available = True  # set to False if an error happend during toggling the switch
+        self._is_available = True  
 
         super().__init__()
 
@@ -466,25 +466,24 @@ class FritzBoxProfileSwitch(SwitchEntity):
     def available(self) -> bool:
         return self._is_available
 
-    async def _async_fetch_update(self):
+    async def async_update(self):
         try:
             status = await self.hass.async_add_executor_job(
                 lambda: self.profile_switch.get_state()
             )
             if status == "never":
                 self._is_on = False
+                self._is_available = True
             elif status == "unlimited":
-                self._is_on = True  # TODO: Decide on default behaviour
+                self._is_on = True
+                self._is_available = True
             else:
                 self._is_available = False
         except Exception:
             _LOGGER.error(
                 f"Could not get state of profile switch", exc_info=True
-            )  # TODO: get detailed error
+            )
             self._is_available = False
-
-    async def async_update(self):
-        await self._async_fetch_update()
 
     async def async_turn_on(self, **kwargs) -> None:
         success: bool = await self._async_handle_profile_switch_on_off(turn_on=True)
@@ -510,10 +509,7 @@ class FritzBoxProfileSwitch(SwitchEntity):
 
     async def _async_handle_profile_switch_on_off(self, turn_on: bool) -> bool:
         # pylint: disable=import-error
-        if turn_on:
-            state = "unlimited"
-        else:
-            state = "never"
+        state = "unlimited" if turn_on else "never"
         try:
             await self.hass.async_add_executor_job(lambda: self.profile_switch.set_state(state))
         except Exception:

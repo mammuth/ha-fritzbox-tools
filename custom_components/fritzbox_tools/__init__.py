@@ -27,12 +27,12 @@ from .const import (
     SERVICE_REBOOT,
     SUPPORTED_DOMAINS,
     CONF_USE_WIFI,
-    CONF_USE_DEVICES,
+    CONF_USE_PROFILES,
     CONF_USE_DEFLECTIONS,
     CONF_USE_PORT,
     CONF_PROFILES,
     DEFAULT_USE_WIFI,
-    DEFAULT_USE_DEVICES,
+    DEFAULT_USE_PROFILES,
     DEFAULT_USE_DEFLECTIONS,
     DEFAULT_USE_PORT,
 )
@@ -52,7 +52,7 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Required(CONF_USERNAME): cv.string,
                 vol.Required(CONF_PASSWORD): cv.string,
                 vol.Optional(CONF_PROFILES): vol.All(cv.ensure_list, [cv.string]),
-                vol.Optional(CONF_USE_DEVICES): cv.string,
+                vol.Optional(CONF_USE_PROFILES): cv.string,
                 vol.Optional(CONF_USE_PORT): cv.string,
                 vol.Optional(CONF_USE_WIFI): cv.string,
                 vol.Optional(CONF_USE_DEFLECTIONS): cv.string,
@@ -85,7 +85,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
     profile_list = entry.data.get(CONF_PROFILES, DEFAULT_PROFILES)
-    use_devices = entry.data.get(CONF_USE_DEVICES, DEFAULT_USE_DEVICES)
+    use_profiles = entry.data.get(CONF_USE_PROFILES, DEFAULT_USE_PROFILES)
     use_wifi = entry.data.get(CONF_USE_WIFI, DEFAULT_USE_WIFI)
     use_port = entry.data.get(CONF_USE_PORT, DEFAULT_USE_PORT)
     use_deflections = entry.data.get(CONF_USE_DEFLECTIONS, DEFAULT_USE_DEFLECTIONS)
@@ -99,7 +99,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         use_wifi=use_wifi,
         use_deflections=use_deflections,
         use_port=use_port,
-        use_devices=use_devices,
+        use_profiles=use_profiles,
     ))
 
     hass.data.setdefault(DOMAIN, {})[DATA_FRITZ_TOOLS_INSTANCE] = fritz_tools
@@ -148,7 +148,7 @@ class FritzBoxTools(object):
         use_port = DEFAULT_USE_PORT,
         use_deflections = DEFAULT_USE_DEFLECTIONS,
         use_wifi = DEFAULT_USE_WIFI,
-        use_devices = DEFAULT_USE_DEVICES,
+        use_profiles = DEFAULT_USE_PROFILES,
     ):
         # pylint: disable=import-error
         from fritzconnection import FritzConnection
@@ -160,7 +160,7 @@ class FritzBoxTools(object):
         
         try:
             self.connection = FritzConnection(
-                address=host, port=port, user=username, password=password, timeout=30.0
+                address=host, port=port, user=username, password=password, timeout=60.0
             )
             if profile_list != DEFAULT_PROFILES:
                 self.profile_switch = {profile: FritzProfileSwitch(
@@ -198,7 +198,7 @@ class FritzBoxTools(object):
         self.use_wifi = use_wifi
         self.use_port = use_port
         self.use_deflections = use_deflections
-        self.use_devices = use_devices
+        self.use_profiles = use_profiles
 
     def service_reconnect_fritzbox(self, call) -> None:
         _LOGGER.info("Reconnecting the fritzbox.")
