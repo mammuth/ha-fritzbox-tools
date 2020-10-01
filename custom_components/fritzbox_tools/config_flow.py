@@ -2,6 +2,7 @@
 import logging
 
 import voluptuous as vol
+from urllib.parse import urlparse
 from homeassistant import config_entries
 from .const import (
     DOMAIN,
@@ -46,59 +47,84 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
-    #_hassio_discovery = None
-
     def __init__(self):
         """Initialize FRITZ!Box Tools flow."""
         pass
         
     async def async_step_ssdp(self, discovery_info):
         """Handle a flow initialized by discovery."""
-        host = urlparse(discovery_info[ATTR_SSDP_LOCATION]).hostname
-        self.context[CONF_HOST] = host
-        
-        uuid = discovery_info.get(ATTR_UPNP_UDN)
-        if uuid:
-            if uuid.startswith("uuid:"):
-                uuid = uuid[5:]
-            await self.async_set_unique_id(uuid)
-            self._abort_if_unique_id_configured({CONF_HOST: host})
+        self._host = urlparse(discovery_info[ATTR_SSDP_LOCATION]).hostname
+        self._name = discovery_info.get(ATTR_UPNP_FRIENDLY_NAME) or host
+        self.context[CONF_HOST] = self._host
         
         for progress in self._async_in_progress():
-            if progress.get("context", {}).get(CONF_HOST) == host:
+            if progress.get("context", {}).get(CONF_HOST) == self._host:
                 return self.async_abort(reason="already_in_progress")
 
-        # update old and user-configured config entries
+        # abort if already configured
         for entry in self.hass.config_entries.async_entries(DOMAIN):
-            if entry.data[CONF_HOST] == host:
-                if uuid and not entry.unique_id:
-                    self.hass.config_entries.async_update_entry(entry, unique_id=uuid)
-                return self.async_abort(reason="already_configured")
+            return self.async_abort(reason="already_configured")
 
-        self._host = host
-        self.context["title_placeholders"] = {"name": "FritzBoxTools"}
-        return await self.async_step_confirm()
+        self.context["title_placeholders"] = {"name": self._name}
+        return await self._show_setup_form_confirm()
 
     async def async_step_confirm(self, user_input=None):
         """Handle user-confirmation of discovered node."""
         errors = {}
 
-        return self._show_setup_form_init(
-            host = self._host
-        )
+        if user_input is None:
+            return await self._show_setup_form_confirm()
+
+        errors = {}
+
+        host = self._host
+        port = user_input.get(CONF_PORT, DEFAULT_PORT)
+        username = user_input.get(CONF_USERNAME)
+        password = user_input.get(CONF_PASSWORD)
+
+        self.fritz_tools = await self.hass.async_add_executor_job(lambda: FritzBoxTools(
+            host=host,
+            port=port,
+            username=username,
+            password=password,
+            profile_list=[]
+        ))
+        success, error = await self.hass.async_add_executor_job(self.fritz_tools.is_ok)
+
+        if not success:
+            errors["base"] = error
+            return await self._show_setup_form_confirm(errors)
+
+        return await self._show_setup_form_options(errors)
         
+    
     async def _show_setup_form_init(self, errors=None, host=None):
         """Show the setup form to the user."""
         return self.async_show_form(
             step_id="start_config",
             data_schema=vol.Schema(
                 {
-                    vol.Optional(CONF_HOST, default=host or DEFAULT_HOST): str,
+                    vol.Optional(CONF_HOST, default=DEFAULT_HOST): str,
                     vol.Optional(CONF_PORT, default=DEFAULT_PORT): vol.Coerce(int),
                     vol.Required(CONF_USERNAME): str,
                     vol.Required(CONF_PASSWORD): str,
                 }
             ),
+            errors=errors or {},
+        )
+    
+    async def _show_setup_form_confirm(self, errors=None):
+        """Show the setup form to the user."""
+        return self.async_show_form(
+            step_id="confirm",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(CONF_PORT, default=DEFAULT_PORT): vol.Coerce(int),
+                    vol.Required(CONF_USERNAME): str,
+                    vol.Required(CONF_PASSWORD): str,
+                }
+            ),
+            description_placeholders={"name": self._name},
             errors=errors or {},
         )
 
@@ -142,7 +168,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
 
         errors = {}
 
-        host = user_input.get(CONF_HOST, DEFAULT_HOST)
+        host = user_input.get(CONF_HOST, self._host or DEFAULT_HOST)
         port = user_input.get(CONF_PORT, DEFAULT_PORT)
         username = user_input.get(CONF_USERNAME)
         password = user_input.get(CONF_PASSWORD)
