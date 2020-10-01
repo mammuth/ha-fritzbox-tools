@@ -20,6 +20,11 @@ from .const import (
     DEFAULT_USE_PORT,
     SUPPORTED_DOMAINS,
 )
+from homeassistant.components.ssdp import (
+    ATTR_SSDP_LOCATION,
+    ATTR_UPNP_FRIENDLY_NAME,
+    ATTR_UPNP_UDN,
+)
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import (
     CONF_HOST,
@@ -41,19 +46,54 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
-    _hassio_discovery = None
+    #_hassio_discovery = None
 
     def __init__(self):
         """Initialize FRITZ!Box Tools flow."""
         pass
+        
+    async def async_step_ssdp(self, discovery_info):
+        """Handle a flow initialized by discovery."""
+        host = urlparse(discovery_info[ATTR_SSDP_LOCATION]).hostname
+        self.context[CONF_HOST] = host
+        
+        uuid = discovery_info.get(ATTR_UPNP_UDN)
+        if uuid:
+            if uuid.startswith("uuid:"):
+                uuid = uuid[5:]
+            await self.async_set_unique_id(uuid)
+            self._abort_if_unique_id_configured({CONF_HOST: host})
+        
+        for progress in self._async_in_progress():
+            if progress.get("context", {}).get(CONF_HOST) == host:
+                return self.async_abort(reason="already_in_progress")
 
-    async def _show_setup_form_init(self, errors=None):
+        # update old and user-configured config entries
+        for entry in self.hass.config_entries.async_entries(DOMAIN):
+            if entry.data[CONF_HOST] == host:
+                if uuid and not entry.unique_id:
+                    self.hass.config_entries.async_update_entry(entry, unique_id=uuid)
+                return self.async_abort(reason="already_configured")
+
+        self._host = host
+        self.context["title_placeholders"] = {"name": "FritzBoxTools"}
+        return await self.async_step_confirm()
+
+    async def async_step_confirm(self, user_input=None):
+        """Handle user-confirmation of discovered node."""
+        errors = {}
+
+        return self._show_setup_form_init(
+            host = self._host
+        )
+        
+    async def _show_setup_form_init(self, errors=None, host=None):
         """Show the setup form to the user."""
         return self.async_show_form(
             step_id="start_config",
             data_schema=vol.Schema(
                 {
-                    vol.Optional(CONF_HOST, default=DEFAULT_HOST): str,
+                    vol.Optional(CONF_HOST, default=host or DEFAULT_HOST): str,
                     vol.Optional(CONF_PORT, default=DEFAULT_PORT): vol.Coerce(int),
                     vol.Required(CONF_USERNAME): str,
                     vol.Required(CONF_PASSWORD): str,
