@@ -20,10 +20,9 @@
                 }
               },
               "confirm": {
-                  "title": "Setup FRITZ!Box Tools - mandatory",
-                  "description": "Discovered FRITZ!Box: {name}\n Setup FRITZ!Box Tools to control your FRITZ!Box.\nMinimum needed: username, password.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
+                  "title": "Setup FRITZ!Box Tools",
+                  "description": "Discovered FRITZ!Box: {name}\n\nSetup FRITZ!Box Tools to control your {name}\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
                   "data": {
-                      "port": "Port",
                       "username": "Username",
                       "password": "Password"
                   }

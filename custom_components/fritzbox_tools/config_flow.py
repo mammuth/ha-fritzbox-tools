@@ -53,7 +53,9 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         
     async def async_step_ssdp(self, discovery_info):
         """Handle a flow initialized by discovery."""
-        self._host = urlparse(discovery_info[ATTR_SSDP_LOCATION]).hostname
+        ssdp_location = urlparse(discovery_info[ATTR_SSDP_LOCATION])
+        self._host = ssdp_location.hostname
+        self._port = ssdp_location.port
         self._name = discovery_info.get(ATTR_UPNP_FRIENDLY_NAME) or host
         self.context[CONF_HOST] = self._host
         
@@ -65,7 +67,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         for entry in self.hass.config_entries.async_entries(DOMAIN):
             return self.async_abort(reason="already_configured")
 
-        self.context["title_placeholders"] = {"name": self._name}
+        self.context["title_placeholders"] = {"name": self._name.replace("FRITZ!Box ","")}
         return await self._show_setup_form_confirm()
 
     async def async_step_confirm(self, user_input=None):
@@ -78,7 +80,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         errors = {}
 
         host = self._host
-        port = user_input.get(CONF_PORT, DEFAULT_PORT)
+        port = self._port
         username = user_input.get(CONF_USERNAME)
         password = user_input.get(CONF_PASSWORD)
 
@@ -119,7 +121,6 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             step_id="confirm",
             data_schema=vol.Schema(
                 {
-                    vol.Optional(CONF_PORT, default=DEFAULT_PORT): vol.Coerce(int),
                     vol.Required(CONF_USERNAME): str,
                     vol.Required(CONF_PASSWORD): str,
                 }
