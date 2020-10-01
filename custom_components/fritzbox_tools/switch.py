@@ -442,7 +442,8 @@ class FritzBoxProfileSwitch(SwitchEntity):
         id = f"fritzbox_profile_{self.profile}"
         self.entity_id = ENTITY_ID_FORMAT.format(slugify(id))
 
-        self._is_available = True  
+        self._is_available = True 
+        self._is_on = None 
 
         super().__init__()
 
