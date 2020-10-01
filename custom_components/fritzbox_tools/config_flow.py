@@ -98,7 +98,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         return await self._show_setup_form_options(errors)
         
     
-    async def _show_setup_form_init(self, errors=None, host=None):
+    async def _show_setup_form_init(self, errors=None):
         """Show the setup form to the user."""
         return self.async_show_form(
             step_id="start_config",
@@ -168,7 +168,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
 
         errors = {}
 
-        host = user_input.get(CONF_HOST, self._host or DEFAULT_HOST)
+        host = user_input.get(CONF_HOST, DEFAULT_HOST)
         port = user_input.get(CONF_PORT, DEFAULT_PORT)
         username = user_input.get(CONF_USERNAME)
         password = user_input.get(CONF_PASSWORD)
