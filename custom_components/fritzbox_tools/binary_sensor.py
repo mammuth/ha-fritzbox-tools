@@ -1,7 +1,7 @@
 """AVM Fritz!Box connectivitiy sensor"""
 import logging
 from collections import defaultdict
-from datetime import timedelta
+import datetime
 
 try:
     from homeassistant.components.binary_sensor import ENTITY_ID_FORMAT, BinarySensorEntity
@@ -15,7 +15,7 @@ from . import DATA_FRITZ_TOOLS_INSTANCE, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-SCAN_INTERVAL = timedelta(seconds=60)
+SCAN_INTERVAL = datetime.timedelta(seconds=60)
 
 
 async def async_setup_entry(
@@ -69,14 +69,18 @@ class FritzBoxConnectivitySensor(BinarySensorEntity):
             status = self.fritzbox_tools.fritzstatus
             self._is_on = await self.hass.async_add_executor_job(lambda: status.is_connected)
             self._is_available = True
+            
+            uptime_seconds = await self.hass.async_add_executor_job(lambda: getattr(status, "uptime"))
+            last_reconnect = datetime.datetime.now() - datetime.timedelta(seconds=uptime_seconds)
+            self._attributes["last_reconnect"] = last_reconnect.replace(microsecond=1).isoformat()
+
             for attr in [
                 "modelname",
                 "external_ip",
                 "external_ipv6",
-                "uptime",
-                "str_uptime",
-            ]:
+            ]:    
                 self._attributes[attr] = await self.hass.async_add_executor_job(lambda: getattr(status, attr))
+                    
         except Exception:
             _LOGGER.error("Error getting the state from the FRITZ!Box", exc_info=True)
             self._is_available = False
