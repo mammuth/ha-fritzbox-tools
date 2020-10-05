@@ -72,7 +72,6 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
 
     async def async_step_confirm(self, user_input=None):
         """Handle user-confirmation of discovered node."""
-        errors = {}
 
         if user_input is None:
             return await self._show_setup_form_confirm()
