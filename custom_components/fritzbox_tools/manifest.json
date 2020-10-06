@@ -5,5 +5,10 @@
     "codeowners": ["@mammuth"],
     "dependencies": [],
     "requirements": ["fritzconnection==1.2.0", "fritzprofiles==0.5.2", "xmltodict==0.12.0"],
-    "config_flow": true
-  }
+    "config_flow": true,
+    "ssdp": [
+      {
+        "st": "urn:schemas-upnp-org:device:fritzbox:1"
+      }
+    ]
+}

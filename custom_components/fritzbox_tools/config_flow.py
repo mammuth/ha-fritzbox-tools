@@ -2,6 +2,7 @@
 import logging
 
 import voluptuous as vol
+from urllib.parse import urlparse
 from homeassistant import config_entries
 from .const import (
     DOMAIN,
@@ -19,6 +20,11 @@ from .const import (
     DEFAULT_USE_PROFILES,
     DEFAULT_USE_PORT,
     SUPPORTED_DOMAINS,
+)
+from homeassistant.components.ssdp import (
+    ATTR_SSDP_LOCATION,
+    ATTR_UPNP_FRIENDLY_NAME,
+    ATTR_UPNP_UDN,
 )
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import (
@@ -41,12 +47,58 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
-    _hassio_discovery = None
-
     def __init__(self):
         """Initialize FRITZ!Box Tools flow."""
         pass
+        
+    async def async_step_ssdp(self, discovery_info):
+        """Handle a flow initialized by discovery."""
+        ssdp_location = urlparse(discovery_info[ATTR_SSDP_LOCATION])
+        self._host = ssdp_location.hostname
+        self._port = ssdp_location.port
+        self._name = discovery_info.get(ATTR_UPNP_FRIENDLY_NAME) or host
+        self.context[CONF_HOST] = self._host
+        
+        for progress in self._async_in_progress():
+            if progress.get("context", {}).get(CONF_HOST) == self._host:
+                return self.async_abort(reason="already_in_progress")
 
+        # abort if already configured
+        for entry in self.hass.config_entries.async_entries(DOMAIN):
+            return self.async_abort(reason="already_configured")
+
+        self.context["title_placeholders"] = {"name": self._name.replace("FRITZ!Box ","")}
+        return await self._show_setup_form_confirm()
+
+    async def async_step_confirm(self, user_input=None):
+        """Handle user-confirmation of discovered node."""
+
+        if user_input is None:
+            return await self._show_setup_form_confirm()
+
+        errors = {}
+
+        host = self._host
+        port = self._port
+        username = user_input.get(CONF_USERNAME)
+        password = user_input.get(CONF_PASSWORD)
+
+        self.fritz_tools = await self.hass.async_add_executor_job(lambda: FritzBoxTools(
+            host=host,
+            port=port,
+            username=username,
+            password=password,
+            profile_list=[]
+        ))
+        success, error = await self.hass.async_add_executor_job(self.fritz_tools.is_ok)
+
+        if not success:
+            errors["base"] = error
+            return await self._show_setup_form_confirm(errors)
+
+        return await self._show_setup_form_options(errors)
+        
+    
     async def _show_setup_form_init(self, errors=None):
         """Show the setup form to the user."""
         return self.async_show_form(
@@ -59,6 +111,20 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                     vol.Required(CONF_PASSWORD): str,
                 }
             ),
+            errors=errors or {},
+        )
+    
+    async def _show_setup_form_confirm(self, errors=None):
+        """Show the setup form to the user."""
+        return self.async_show_form(
+            step_id="confirm",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_USERNAME): str,
+                    vol.Required(CONF_PASSWORD): str,
+                }
+            ),
+            description_placeholders={"name": self._name},
             errors=errors or {},
         )
 
