@@ -37,17 +37,18 @@ Go to the `Integrations pane` on your Home Assistant instance.
 **Using `configuration.yml` (legacy):**
 ```yaml
 fritzbox_tools:
-  host: "192.168.178.1"  # required
-  username: "home-assistant"  # required (create one at `System > FRITZ!Box Benutzer` on your router)
-  password: "yourfritzboxpassword"  # required
-  profiles: # Optional. Needed if you want to control the profiles of your network devices.
-    - "Gesperrt"
-    - "Gast"
-    - "Kinder Smartphones"
-  use_wifi: True # Optional, default True: if False no wifi switches will be exposed
-  use_port: True  # Optional, default True: if False no port switches will be exposed
-  use_profiles: True  # Optional, default True: if False no device switches will be exposed, redundant if devices is not specified
-  use_deflections: True # Optional, default True: if False no call deflection switches will be exposed
+  devices:
+    - host: "192.168.178.1"  # required
+      username: "home-assistant"  # required (create one at `System > FRITZ!Box Benutzer` on your router)
+      password: "yourfritzboxpassword"  # required
+      profiles: # Optional. Needed if you want to control the profiles of your network devices.
+        - "Gesperrt"
+        - "Gast"
+        - "Kinder Smartphones"
+      use_wifi: True # Optional, default True: if False no wifi switches will be exposed
+      use_port: True  # Optional, default True: if False no port switches will be exposed
+      use_profiles: True  # Optional, default True: if False no device switches will be exposed, redundant if devices is not specified
+      use_deflections: True # Optional, default True: if False no call deflection switches will be exposed
 ```
 
 ### Prepare your FRITZ!Box

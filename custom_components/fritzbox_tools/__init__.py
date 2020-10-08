@@ -1,6 +1,7 @@
 """Support for AVM Fritz!Box functions"""
 import asyncio
 import logging
+import socket
 import time
 
 import voluptuous as vol
@@ -9,6 +10,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    CONF_DEVICES,
     CONF_HOST,
     CONF_PASSWORD,
     CONF_PORT,
@@ -43,36 +45,55 @@ DATA_FRITZ_TOOLS_INSTANCE = "fritzbox_tools_instance"
 
 _LOGGER = logging.getLogger(__name__)
 
+def ensure_unique_hosts(value):
+    """Validate that all configs have a unique host."""
+    vol.Schema(vol.Unique("duplicate host entries found"))(
+        [socket.gethostbyname(entry[CONF_HOST]) for entry in value]
+    )
+    return value
+
 CONFIG_SCHEMA = vol.Schema(
-    {
-        DOMAIN: vol.Schema(
-            {
-                vol.Optional(CONF_HOST): cv.string,
-                vol.Optional(CONF_PORT): cv.port,
-                vol.Required(CONF_USERNAME): cv.string,
-                vol.Required(CONF_PASSWORD): cv.string,
-                vol.Optional(CONF_PROFILES): vol.All(cv.ensure_list, [cv.string]),
-                vol.Optional(CONF_USE_PROFILES): cv.string,
-                vol.Optional(CONF_USE_PORT): cv.string,
-                vol.Optional(CONF_USE_WIFI): cv.string,
-                vol.Optional(CONF_USE_DEFLECTIONS): cv.string,
-            }
-        )
-    },
+    vol.All(
+        cv.deprecated(DOMAIN),
+        {
+            DOMAIN: vol.Schema(
+                {
+                    vol.Required(CONF_DEVICES): vol.All(
+                        cv.ensure_list,
+                        [
+                            vol.Schema(
+                                {
+                                    vol.Optional(CONF_HOST): cv.string,
+                                    vol.Optional(CONF_PORT): cv.port,
+                                    vol.Required(CONF_USERNAME): cv.string,
+                                    vol.Required(CONF_PASSWORD): cv.string,
+                                    vol.Optional(CONF_PROFILES): vol.All(cv.ensure_list, [cv.string]),
+                                    vol.Optional(CONF_USE_PROFILES): cv.string,
+                                    vol.Optional(CONF_USE_PORT): cv.string,
+                                    vol.Optional(CONF_USE_WIFI): cv.string,
+                                    vol.Optional(CONF_USE_DEFLECTIONS): cv.string,
+                                }
+                            )
+                        ],
+                        ensure_unique_hosts,
+                    )
+                }
+            )
+        },
+    ),
     extra=vol.ALLOW_EXTRA,
 )
 
 
 async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
     """Setup FRITZ!Box Tools component"""
-    if not hass.config_entries.async_entries(DOMAIN) and DOMAIN in config:
-        hass.async_create_task(
-            hass.config_entries.flow.async_init(
-                DOMAIN,
-                context={"source": config_entries.SOURCE_IMPORT},
-                data=config[DOMAIN],
+    if DOMAIN in config:
+        for entry_config in config[DOMAIN][CONF_DEVICES]:
+            hass.async_create_task(
+                hass.config_entries.flow.async_init(
+                    DOMAIN, context={"source": "import"}, data=entry_config
+                )
             )
-        )
 
     return True
 
@@ -102,13 +123,14 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         use_profiles=use_profiles,
     ))
 
-    hass.data.setdefault(DOMAIN, {})[DATA_FRITZ_TOOLS_INSTANCE] = fritz_tools
+    hass.data.setdefault(DOMAIN, {DATA_FRITZ_TOOLS_INSTANCE: {}, CONF_DEVICES: set()})
+    hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][entry.entry_id] = fritz_tools
 
     hass.services.async_register(
-        DOMAIN, SERVICE_RECONNECT, fritz_tools.service_reconnect_fritzbox
+        DOMAIN, f"{SERVICE_RECONNECT}_{fritz_tools.fritzbox_model}", fritz_tools.service_reconnect_fritzbox
     )
     hass.services.async_register(
-        DOMAIN, SERVICE_REBOOT, fritz_tools.service_reboot_fritzbox
+        DOMAIN, f"{SERVICE_REBOOT}_{fritz_tools.fritzbox_model}", fritz_tools.service_reboot_fritzbox
     )
 
     # Load the other platforms like switch
@@ -122,13 +144,12 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
 
 async def async_unload_entry(hass: HomeAssistantType, entry: ConfigType) -> bool:
     """Unload FRITZ!Box Tools config entry."""
-    hass.services.async_remove(DOMAIN, SERVICE_RECONNECT)
-    hass.services.async_remove(DOMAIN, SERVICE_REBOOT)
+    fritz_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE].pop(entry.entry_id)
+    hass.services.async_remove(DOMAIN, f"{SERVICE_RECONNECT}_{fritz_tools.fritzbox_model}")
+    hass.services.async_remove(DOMAIN, f"{SERVICE_REBOOT}_{fritz_tools.fritzbox_model}")
 
     for domain in SUPPORTED_DOMAINS:
         await hass.config_entries.async_forward_entry_unload(entry, domain)
-
-    del hass.data[DOMAIN]
 
     return True
 
@@ -199,7 +220,7 @@ class FritzBoxTools(object):
         self.use_port = use_port
         self.use_deflections = use_deflections
         self.use_profiles = use_profiles
-
+        
     def service_reconnect_fritzbox(self, call) -> None:
         _LOGGER.info("Reconnecting the fritzbox.")
         self.connection.reconnect()
@@ -214,6 +235,10 @@ class FritzBoxTools(object):
     @property
     def unique_id(self):
         return self._unique_id
+    
+    @property
+    def fritzbox_model(self):
+        return self._device_info["model"].replace("FRITZ!Box ","")
 
     @property
     def device_info(self):
@@ -226,7 +251,7 @@ class FritzBoxTools(object):
                 # Serial numbers are unique identifiers within a specific domain
                 (DOMAIN, self.unique_id)
             },
-            "name": info.get("NewProductClass"),
+            "name": info.get("NewModelName"),
             "manufacturer": "AVM",
             "model": info.get("NewModelName"),
             "sw_version": info.get("NewSoftwareVersion"),

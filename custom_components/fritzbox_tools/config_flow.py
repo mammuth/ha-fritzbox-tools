@@ -65,7 +65,8 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
 
         # abort if already configured
         for entry in self.hass.config_entries.async_entries(DOMAIN):
-            return self.async_abort(reason="already_configured")
+            if entry.data[CONF_HOST] == self._host:
+                return self.async_abort(reason="already_configured")
 
         self.context["title_placeholders"] = {"name": self._name.replace("FRITZ!Box ","")}
         return await self._show_setup_form_confirm()
@@ -157,8 +158,6 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initiated by the user."""
-        if self._async_current_entries():
-            return self.async_abort(reason="single_instance_allowed")
 
         return await self._show_setup_form_init()
 
@@ -180,8 +179,15 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             password=password,
             profile_list=[]
         ))
+        
         success, error = await self.hass.async_add_executor_job(self.fritz_tools.is_ok)
-
+        self._name = self.fritz_tools.device_info["model"]
+        
+        for entry in self.hass.config_entries.async_entries(DOMAIN):
+            if entry.data[CONF_HOST] == host:
+                success = False
+                error = "already_configured"
+        
         if not success:
             errors["base"] = error
             return await self._show_setup_form_init(errors)
@@ -200,7 +206,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         else:
             profiles = []
             return self.async_create_entry(
-                title="FRITZ!Box Tools",
+                title=self._name,
                 data={
                     CONF_HOST: self.fritz_tools.host,
                     CONF_PASSWORD: self.fritz_tools.password,
@@ -235,7 +241,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             return await self._show_setup_form_profiles(errors)
 
         return self.async_create_entry(
-            title="FRITZ!Box Tools",
+            title=self._name,
             data={
                 CONF_HOST: self.fritz_tools.host,
                 CONF_PASSWORD: self.fritz_tools.password,
@@ -282,12 +288,17 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             profile_list=profiles,
         ))
         success, error = await self.hass.async_add_executor_job(fritz_tools.is_ok)
-
+        self._name = fritz_tools.device_info["model"]
+        
+        for entry in self.hass.config_entries.async_entries(DOMAIN):
+            if entry.data[CONF_HOST] == host:
+                return self.async_abort()
+        
         if not success:
             _LOGGER.error('Import of config failed. Check your fritzbox credentials',error)
 
         return self.async_create_entry(
-            title="FRITZ!Box Tools",
+            title=self._name,
             data={
                 CONF_HOST: host,
                 CONF_PASSWORD: password,

@@ -27,7 +27,7 @@ async def async_setup_entry(
     hass: HomeAssistantType, entry: ConfigEntry, async_add_entities
 ) -> None:
     _LOGGER.debug("Setting up switches")
-    fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
+    fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][entry.entry_id]
 
     def _create_deflection_switches():
         deflections_response = fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetNumberOfDeflections")
@@ -151,7 +151,7 @@ class FritzBoxPortSwitch(SwitchEntity):
 
         description = port_mapping["NewPortMappingDescription"]
         self._name = f"Port forward {description}"
-        id = f"fritzbox_portforward_{slugify(description)}"
+        id = f"fritzbox_{self.fritzbox_tools.fritzbox_model}_portforward_{slugify(description)}"
         self.entity_id = ENTITY_ID_FORMAT.format(id)
 
         self._attributes = defaultdict(str)
@@ -291,7 +291,7 @@ class FritzBoxDeflectionSwitch(SwitchEntity):
         self.dict_of_deflection = dict_of_deflection
         self.id = int(self.dict_of_deflection["DeflectionId"])
         self._name = f"Deflection {self.id}"
-        id = f"fritzbox_deflection_{self.id}"
+        id = f"fritzbox_{self.fritzbox_tools.fritzbox_model}_deflection_{self.id}"
         self.entity_id = ENTITY_ID_FORMAT.format(id)
 
         self._attributes = defaultdict(str)
@@ -439,7 +439,7 @@ class FritzBoxProfileSwitch(SwitchEntity):
         self.profile_switch = self.fritzbox_tools.profile_switch[self.profile]
 
         self._name = f"Access profile {self.profile}"
-        id = f"fritzbox_profile_{self.profile}"
+        id = f"fritzbox_{self.fritzbox_tools.fritzbox_model}_profile_{self.profile}"
         self.entity_id = ENTITY_ID_FORMAT.format(slugify(id))
 
         self._is_available = True 
@@ -533,7 +533,7 @@ class FritzBoxWifiSwitch(SwitchEntity):
         self._fritzbox_tools = fritzbox_tools
         self._network_num = network_num
         id = network_name.lower().replace(' ', '_').replace('(', '').replace(')', '')
-        self.entity_id = ENTITY_ID_FORMAT.format(f"fritzbox_{id}")
+        self.entity_id = ENTITY_ID_FORMAT.format(f"fritzbox_{self._fritzbox_tools.fritzbox_model}_{id}")
         self._name = f"FRITZ!Box {network_name}"
         self._is_on = False
         self._last_toggle_timestamp = None
