@@ -107,7 +107,7 @@ The following script can be used to easily add a reconnect button to your UI. If
 fritz_box_reconnect:
   alias: "Reconnect FRITZ!Box"
   sequence:
-  - service: fritzbox_tools.reconnect
+  - service: fritzbox_tools.reconnect_[model]
 ```
 
 **Automation: Reconnect / get new IP every night**
@@ -119,7 +119,7 @@ automation:
     platform: time
     at: '05:00:00'
   action:
-    - service: fritzbox_tools.reconnect
+    - service: fritzbox_tools.reconnect_[model]
 ```
 
 **Automation: Phone notification with wifi credentials when guest wifi is created**
@@ -130,7 +130,7 @@ automation:
   - alias: "Guests Wifi Turned On -> Send Password To Phone
     trigger:
       platform: state
-      entity_id: switch.fritzbox_guest_wifi
+      entity_id: switch.fritzbox_[model]_guest_wifi
       to: 'on'
     action:
       - service: notify.pushbullet_max
@@ -159,7 +159,7 @@ automation:
       at: 05:00:00
     action:
     - service: switch.turn_on
-      entity_id: switch.fritzbox_portforward_http_server
+      entity_id: switch.fritzbox_[model]_portforward_http_server
     - service: hassio.addon_stop
       data:
         addon: core_nginx_proxy
@@ -172,7 +172,7 @@ automation:
       data:
         addon: core_nginx_proxy
     - service: switch.turn_off
-      entity_id: switch.fritzbox_portforward_http_server
+      entity_id: switch.fritzbox_[model]_portforward_http_server
 ```
 
 **Sensor: External IP address of your router**
@@ -185,8 +185,8 @@ sensors:
     sensors:
       external_ip:
         friendly_name: "External IP Address"
-        entity_id: binary_sensor.fritzbox_connectivity  # only react on changes of the router connectivity sensor
-        value_template: "{{ state_attr('binary_sensor.fritzbox_connectivity', 'external_ip') }}"
+        entity_id: binary_sensor.fritzbox_[model]_connectivity  # only react on changes of the router connectivity sensor
+        value_template: "{{ state_attr('binary_sensor.fritzbox_[model]_connectivity', 'external_ip') }}"
         icon_template: mdi:router-wireless
 ```
 

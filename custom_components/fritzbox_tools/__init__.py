@@ -45,12 +45,14 @@ DATA_FRITZ_TOOLS_INSTANCE = "fritzbox_tools_instance"
 
 _LOGGER = logging.getLogger(__name__)
 
+
 def ensure_unique_hosts(value):
     """Validate that all configs have a unique host."""
     vol.Schema(vol.Unique("duplicate host entries found"))(
         [socket.gethostbyname(entry[CONF_HOST]) for entry in value]
     )
     return value
+
 
 CONFIG_SCHEMA = vol.Schema(
     vol.All(
@@ -159,26 +161,27 @@ class FritzBoxTools(object):
     Attention: The initialization of the class performs sync I/O. If you're calling this from within Home Assistant,
     wrap it in await self.hass.async_add_executor_job(lambda: FritzBoxTools(...))
     """
+
     def __init__(
-        self,
-        password,
-        username = DEFAULT_USERNAME,
-        host = DEFAULT_HOST,
-        port=DEFAULT_PORT,
-        profile_list = DEFAULT_PROFILES,
-        use_port = DEFAULT_USE_PORT,
-        use_deflections = DEFAULT_USE_DEFLECTIONS,
-        use_wifi = DEFAULT_USE_WIFI,
-        use_profiles = DEFAULT_USE_PROFILES,
+            self,
+            password,
+            username=DEFAULT_USERNAME,
+            host=DEFAULT_HOST,
+            port=DEFAULT_PORT,
+            profile_list=DEFAULT_PROFILES,
+            use_port=DEFAULT_USE_PORT,
+            use_deflections=DEFAULT_USE_DEFLECTIONS,
+            use_wifi=DEFAULT_USE_WIFI,
+            use_profiles=DEFAULT_USE_PROFILES,
     ):
         # pylint: disable=import-error
         from fritzconnection import FritzConnection
         from fritzconnection.lib.fritzstatus import FritzStatus
         from fritzprofiles import FritzProfileSwitch
         from fritzconnection.core.exceptions import FritzConnectionException
-        
+
         # general timeout for all requests to the router. Some calls need quite some time.
-        
+
         try:
             self.connection = FritzConnection(
                 address=host, port=port, user=username, password=password, timeout=60.0
@@ -188,7 +191,7 @@ class FritzBoxTools(object):
                     "http://" + host, username, password, profile
                 ) for profile in profile_list}
             else:
-                self.profile_switch={}
+                self.profile_switch = {}
 
             self.fritzstatus = FritzStatus(fc=self.connection)
             self._unique_id = self.connection.call_action("DeviceInfo:1", "GetInfo")[
@@ -206,9 +209,8 @@ class FritzBoxTools(object):
         except AttributeError:
             self.success = False
             self.error = "profile_not_found"
-            
-            
-        self.ha_ip = get_local_ip()    
+
+        self.ha_ip = get_local_ip()
         self.profile_list = profile_list
 
         self.username = username
@@ -220,7 +222,7 @@ class FritzBoxTools(object):
         self.use_port = use_port
         self.use_deflections = use_deflections
         self.use_profiles = use_profiles
-        
+
     def service_reconnect_fritzbox(self, call) -> None:
         _LOGGER.info("Reconnecting the fritzbox.")
         self.connection.reconnect()
@@ -231,14 +233,14 @@ class FritzBoxTools(object):
 
     def is_ok(self):
         return self.success, self.error
-        
+
     @property
     def unique_id(self):
         return self._unique_id
-    
+
     @property
     def fritzbox_model(self):
-        return self._device_info["model"].replace("FRITZ!Box ","")
+        return self._device_info["model"].replace("FRITZ!Box ", "")
 
     @property
     def device_info(self):
