@@ -87,14 +87,15 @@ If the switch is toggled on, the devices assigned to the specific profile have i
 
 #### Exposed entities
 
-- `service.reconnect`  Reconnect to your ISP
-- `service.reboot`  Reboot your FRITZ!Box
-- `switch.fritzbox_wifi`  Turns on/off wifi
-- `switch.fritzbox_wifi_5ghz`  Turns on/off wifi (5GHz)
-- `switch.fritzbox_guest_wifi`  Turns on/off guest wifi
-- `binary_sensor.fritzbox_connectivity`  online/offline depending on your internet connection
-- `switch.fritzbox_portforward_[description of your forward]` for each of your port forwards for your HA device
-- `switch.fritzbox_profile_[name of your profile]` for each profile you have set
+- `service.reconnect_[model]`  Reconnect to your ISP
+- `service.reboot_[model]`  Reboot your FRITZ!Box
+- `switch.fritzbox_[model_wifi]`  Turns on/off wifi
+- `switch.fritzbox_[model_wifi_5ghz]`  Turns on/off wifi (5GHz)
+- `switch.fritzbox_[model]_guest_wifi`  Turns on/off guest wifi
+- `binary_sensor.fritzbox_[model]_connectivity`  online/offline depending on your internet connection
+- `switch.fritzbox_[model]_portforward_[description of your forward]` for each of your port forwards for your HA device
+- `switch.fritzbox_[model]_deflection_[if of your deflection]` for each deflection you have set.
+- `switch.fritzbox_[model]_profile_[name of your profile]` for each profile you have set
 
 
 ## Example Automations and Scripts
