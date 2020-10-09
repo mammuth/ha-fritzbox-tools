@@ -536,7 +536,7 @@ class FritzBoxWifiSwitch(SwitchEntity):
         id = network_name.lower().replace(' ', '_').replace('(', '').replace(')', '')
         self.entity_id = ENTITY_ID_FORMAT.format(f"fritzbox_{self._fritzbox_tools.fritzbox_model}_{id}")
         self._name = f"FRITZ!Box {network_name}"
-        self._is_on = False
+        self._is_on = None
         self._last_toggle_timestamp = None
         self._is_available = (
             True  # set to False if an error happend during toggling the switch
@@ -572,7 +572,7 @@ class FritzBoxWifiSwitch(SwitchEntity):
             ))
             _LOGGER.debug("WiFi GetInfo:")
             _LOGGER.debug(wifi_info)
-            self._is_on = True if wifi_info["NewStatus"] == "Up" else False
+            self._is_on = wifi_info["NewEnable"] is True
             self._is_available = True
         except FritzConnectionException:
             _LOGGER.error(

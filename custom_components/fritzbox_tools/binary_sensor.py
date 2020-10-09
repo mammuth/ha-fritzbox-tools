@@ -66,10 +66,12 @@ class FritzBoxConnectivitySensor(BinarySensorEntity):
     async def _async_fetch_update(self):
         self._is_on = True
         try:
-            status = self.fritzbox_tools.fritzstatus
-            self._is_on = await self.hass.async_add_executor_job(lambda: status.is_connected)
+            connection = lambda: self.fritzbox_tools.connection.call_action("WANCommonInterfaceConfig1", "GetCommonLinkProperties")["NewPhysicalLinkStatus"]
+            is_up = await self.hass.async_add_executor_job(connection)
+            self._is_on = is_up == "Up"
             self._is_available = True
-            
+
+            status = self.fritzbox_tools.fritzstatus
             uptime_seconds = await self.hass.async_add_executor_job(lambda: getattr(status, "uptime"))
             last_reconnect = datetime.datetime.now() - datetime.timedelta(seconds=uptime_seconds)
             self._attributes["last_reconnect"] = last_reconnect.replace(microsecond=1).isoformat()
