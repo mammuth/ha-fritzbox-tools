@@ -42,6 +42,7 @@ from .const import (
 REQUIREMENTS = ["fritzconnection==1.2.0", "fritz-switch-profiles==1.0.0", "xmltodict==0.12.0"]
 
 DATA_FRITZ_TOOLS_INSTANCE = "fritzbox_tools_instance"
+ATTR_HOST = "host"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -86,6 +87,7 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
+SERVICE_SCHEMA = vol.Schema({vol.Required(ATTR_HOST): cv.string})
 
 async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
     """Setup FRITZ!Box Tools component"""
@@ -126,14 +128,10 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
     ))
 
     hass.data.setdefault(DOMAIN, {DATA_FRITZ_TOOLS_INSTANCE: {}, CONF_DEVICES: set()})
+    hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][host] = fritz_tools
     hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][entry.entry_id] = fritz_tools
 
-    hass.services.async_register(
-        DOMAIN, f"{SERVICE_RECONNECT}_{fritz_tools.fritzbox_model}", fritz_tools.service_reconnect_fritzbox
-    )
-    hass.services.async_register(
-        DOMAIN, f"{SERVICE_REBOOT}_{fritz_tools.fritzbox_model}", fritz_tools.service_reboot_fritzbox
-    )
+    setup_hass_services(hass)
 
     # Load the other platforms like switch
     for domain in SUPPORTED_DOMAINS:
@@ -143,12 +141,40 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
 
     return True
 
+def setup_hass_services(hass):
+    """Home Assistant services."""
+
+    def reboot(call):
+        """Reboot fritzbox"""
+        host = call.data.get(ATTR_HOST)
+        fritztools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE].get(host,None)
+        if fritztools is None:
+            _LOGGER.error(f"{SERVICE_REBOOT}: Please supply a valid hostname of a configured fritzbox for the service (e.g. 192.168.178.1)")
+        else:
+            fritztools.service_reboot_fritzbox()
+
+    def reconnect(call):
+        """Reboot fritzbox"""
+        host = call.data.get(ATTR_HOST)
+        fritztools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE].get(host,None)
+        if fritztools is None:
+            _LOGGER.error(f"{SERVICE_RECONNECT}: Please supply a valid hostname of a configured fritzbox for the service (e.g. 192.168.178.1)")
+        else:
+            fritztools.service_reconnect_fritzbox()
+
+    hass.services.async_register(
+        DOMAIN,SERVICE_RECONNECT, reconnect, schema=SERVICE_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_REBOOT, reboot, schema=SERVICE_SCHEMA,
+    )
 
 async def async_unload_entry(hass: HomeAssistantType, entry: ConfigType) -> bool:
     """Unload FRITZ!Box Tools config entry."""
-    fritz_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE].pop(entry.entry_id)
-    hass.services.async_remove(DOMAIN, f"{SERVICE_RECONNECT}_{fritz_tools.fritzbox_model}")
-    hass.services.async_remove(DOMAIN, f"{SERVICE_REBOOT}_{fritz_tools.fritzbox_model}")
+    hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE].pop(entry.data.get(CONF_HOST))
+    hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE].pop(entry.entry_id)
+    hass.services.async_remove(DOMAIN, SERVICE_RECONNECT)
+    hass.services.async_remove(DOMAIN, SERVICE_REBOOT)
 
     for domain in SUPPORTED_DOMAINS:
         await hass.config_entries.async_forward_entry_unload(entry, domain)
@@ -223,11 +249,11 @@ class FritzBoxTools(object):
         self.use_deflections = use_deflections
         self.use_profiles = use_profiles
 
-    def service_reconnect_fritzbox(self, call) -> None:
+    def service_reconnect_fritzbox(self) -> None:
         _LOGGER.info("Reconnecting the fritzbox.")
         self.connection.reconnect()
 
-    def service_reboot_fritzbox(self, call) -> None:
+    def service_reboot_fritzbox(self) -> None:
         _LOGGER.info("Rebooting the fritzbox.")
         self.connection.call_action("DeviceConfig1", "Reboot")
 
