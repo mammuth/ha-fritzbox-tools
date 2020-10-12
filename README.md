@@ -87,8 +87,8 @@ If the switch is toggled on, the devices assigned to the specific profile have i
 
 #### Exposed entities
 
-- `service.reconnect_[model]`  Reconnect to your ISP
-- `service.reboot_[model]`  Reboot your FRITZ!Box
+- `service.reconnect`  Reconnect to your ISP
+- `service.reboot`  Reboot your FRITZ!Box
 - `switch.fritzbox_[model_wifi]`  Turns on/off wifi
 - `switch.fritzbox_[model_wifi_5ghz]`  Turns on/off wifi (5GHz)
 - `switch.fritzbox_[model]_guest_wifi`  Turns on/off guest wifi
@@ -107,7 +107,9 @@ The following script can be used to easily add a reconnect button to your UI. If
 fritz_box_reconnect:
   alias: "Reconnect FRITZ!Box"
   sequence:
-  - service: fritzbox_tools.reconnect_[model]
+  - service: fritzbox_tools.reconnect
+    data:
+        host: 192.168.178.1
 ```
 
 **Automation: Reconnect / get new IP every night**
@@ -119,7 +121,9 @@ automation:
     platform: time
     at: '05:00:00'
   action:
-    - service: fritzbox_tools.reconnect_[model]
+    - service: fritzbox_tools.reconnect
+      data:
+        host: 192.168.178.1
 ```
 
 **Automation: Phone notification with wifi credentials when guest wifi is created**
