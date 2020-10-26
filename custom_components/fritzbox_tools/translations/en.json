@@ -44,10 +44,6 @@
             "profile_not_found": "The format of the spcified profile(s) is wrong or profile not found in FRITZ!Box. Check your profiles in the FRITZ!Box at Internet/Filters/Access Profiles.",
             "already_in_progress": "FRITZ!Box configuration is already in progress.",
             "already_configured": "This AVM FRITZ!Box is already configured."
-        },
-        "abort": {
-            "single_instance_allowed": "Only a single configuration of FRITZ!Box Tools is allowed.",
-            "existing_instance_updated": "Updated existing configuration."
         }
     }
 }

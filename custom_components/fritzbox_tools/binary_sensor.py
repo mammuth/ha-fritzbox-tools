@@ -22,7 +22,7 @@ async def async_setup_entry(
     hass: HomeAssistantType, entry: ConfigEntry, async_add_entities
 ) -> None:
     _LOGGER.debug("Setting up sensors")
-    fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE]
+    fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][entry.entry_id]
 
     async_add_entities([FritzBoxConnectivitySensor(fritzbox_tools)], True)
     return True
@@ -30,12 +30,12 @@ async def async_setup_entry(
 
 class FritzBoxConnectivitySensor(BinarySensorEntity):
     name = "FRITZ!Box Connectivity"
-    entity_id = ENTITY_ID_FORMAT.format("fritzbox_connectivity")
     icon = "mdi:router-wireless"
     device_class = "connectivity"
 
     def __init__(self, fritzbox_tools):
         self.fritzbox_tools = fritzbox_tools
+        self.entity_id = ENTITY_ID_FORMAT.format(f"fritzbox_{self.fritzbox_tools.fritzbox_model}_connectivity")
         self._is_on = True  # We assume the fritzbox to be online initially
         self._is_available = (
             True  # set to False if an error happend during toggling the switch
@@ -66,10 +66,12 @@ class FritzBoxConnectivitySensor(BinarySensorEntity):
     async def _async_fetch_update(self):
         self._is_on = True
         try:
-            status = self.fritzbox_tools.fritzstatus
-            self._is_on = await self.hass.async_add_executor_job(lambda: status.is_connected)
+            connection = lambda: self.fritzbox_tools.connection.call_action("WANCommonInterfaceConfig1", "GetCommonLinkProperties")["NewPhysicalLinkStatus"]
+            is_up = await self.hass.async_add_executor_job(connection)
+            self._is_on = is_up == "Up"
             self._is_available = True
-            
+
+            status = self.fritzbox_tools.fritzstatus
             uptime_seconds = await self.hass.async_add_executor_job(lambda: getattr(status, "uptime"))
             last_reconnect = datetime.datetime.now() - datetime.timedelta(seconds=uptime_seconds)
             self._attributes["last_reconnect"] = last_reconnect.replace(microsecond=1).isoformat()

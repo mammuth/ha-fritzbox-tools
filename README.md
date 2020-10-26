@@ -37,17 +37,18 @@ Go to the `Integrations pane` on your Home Assistant instance.
 **Using `configuration.yml` (legacy):**
 ```yaml
 fritzbox_tools:
-  host: "192.168.178.1"  # required
-  username: "home-assistant"  # required (create one at `System > FRITZ!Box Benutzer` on your router)
-  password: "yourfritzboxpassword"  # required
-  profiles: # Optional. Needed if you want to control the profiles of your network devices.
-    - "Gesperrt"
-    - "Gast"
-    - "Kinder Smartphones"
-  use_wifi: True # Optional, default True: if False no wifi switches will be exposed
-  use_port: True  # Optional, default True: if False no port switches will be exposed
-  use_profiles: True  # Optional, default True: if False no device switches will be exposed, redundant if devices is not specified
-  use_deflections: True # Optional, default True: if False no call deflection switches will be exposed
+  devices:
+    - host: "192.168.178.1"  # required
+      username: "home-assistant"  # required (create one at `System > FRITZ!Box Benutzer` on your router)
+      password: "yourfritzboxpassword"  # required
+      profiles: # Optional. Needed if you want to control the profiles of your network devices.
+        - "Gesperrt"
+        - "Gast"
+        - "Kinder Smartphones"
+      use_wifi: True # Optional, default True: if False no wifi switches will be exposed
+      use_port: True  # Optional, default True: if False no port switches will be exposed
+      use_profiles: True  # Optional, default True: if False no device switches will be exposed, redundant if devices is not specified
+      use_deflections: True # Optional, default True: if False no call deflection switches will be exposed
 ```
 
 ### Prepare your FRITZ!Box
@@ -88,12 +89,13 @@ If the switch is toggled on, the devices assigned to the specific profile have i
 
 - `service.reconnect`  Reconnect to your ISP
 - `service.reboot`  Reboot your FRITZ!Box
-- `switch.fritzbox_wifi`  Turns on/off wifi
-- `switch.fritzbox_wifi_5ghz`  Turns on/off wifi (5GHz)
-- `switch.fritzbox_guest_wifi`  Turns on/off guest wifi
-- `binary_sensor.fritzbox_connectivity`  online/offline depending on your internet connection
-- `switch.fritzbox_portforward_[description of your forward]` for each of your port forwards for your HA device
-- `switch.fritzbox_profile_[name of your profile]` for each profile you have set
+- `switch.fritzbox_[model_wifi]`  Turns on/off wifi
+- `switch.fritzbox_[model_wifi_5ghz]`  Turns on/off wifi (5GHz)
+- `switch.fritzbox_[model]_guest_wifi`  Turns on/off guest wifi
+- `binary_sensor.fritzbox_[model]_connectivity`  online/offline depending on your internet connection
+- `switch.fritzbox_[model]_portforward_[description of your forward]` for each of your port forwards for your HA device
+- `switch.fritzbox_[model]_deflection_[if of your deflection]` for each deflection you have set.
+- `switch.fritzbox_[model]_profile_[name of your profile]` for each profile you have set
 
 
 ## Example Automations and Scripts
@@ -106,6 +108,8 @@ fritz_box_reconnect:
   alias: "Reconnect FRITZ!Box"
   sequence:
   - service: fritzbox_tools.reconnect
+    data:
+        host: 192.168.178.1
 ```
 
 **Automation: Reconnect / get new IP every night**
@@ -118,6 +122,8 @@ automation:
     at: '05:00:00'
   action:
     - service: fritzbox_tools.reconnect
+      data:
+        host: 192.168.178.1
 ```
 
 **Automation: Phone notification with wifi credentials when guest wifi is created**
@@ -128,7 +134,7 @@ automation:
   - alias: "Guests Wifi Turned On -> Send Password To Phone
     trigger:
       platform: state
-      entity_id: switch.fritzbox_guest_wifi
+      entity_id: switch.fritzbox_[model]_guest_wifi
       to: 'on'
     action:
       - service: notify.pushbullet_max
@@ -157,7 +163,7 @@ automation:
       at: 05:00:00
     action:
     - service: switch.turn_on
-      entity_id: switch.fritzbox_portforward_http_server
+      entity_id: switch.fritzbox_[model]_portforward_http_server
     - service: hassio.addon_stop
       data:
         addon: core_nginx_proxy
@@ -170,7 +176,7 @@ automation:
       data:
         addon: core_nginx_proxy
     - service: switch.turn_off
-      entity_id: switch.fritzbox_portforward_http_server
+      entity_id: switch.fritzbox_[model]_portforward_http_server
 ```
 
 **Sensor: External IP address of your router**
@@ -183,8 +189,8 @@ sensors:
     sensors:
       external_ip:
         friendly_name: "External IP Address"
-        entity_id: binary_sensor.fritzbox_connectivity  # only react on changes of the router connectivity sensor
-        value_template: "{{ state_attr('binary_sensor.fritzbox_connectivity', 'external_ip') }}"
+        entity_id: binary_sensor.fritzbox_[model]_connectivity  # only react on changes of the router connectivity sensor
+        value_template: "{{ state_attr('binary_sensor.fritzbox_[model]_connectivity', 'external_ip') }}"
         icon_template: mdi:router-wireless
 ```
 
