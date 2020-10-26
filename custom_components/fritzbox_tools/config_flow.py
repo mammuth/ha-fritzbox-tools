@@ -106,7 +106,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
 
         return self._show_setup_form_options(errors)
 
-    async def _show_setup_form_init(self, errors=None):
+    def _show_setup_form_init(self, errors=None):
         """Show the setup form to the user."""
         return self.async_show_form(
             step_id="start_config",
@@ -168,7 +168,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
 
     async def async_step_start_config(self, user_input=None):
         if user_input is None:
-            return await self._show_setup_form_init()
+            return self._show_setup_form_init()
 
         errors = {}
 
