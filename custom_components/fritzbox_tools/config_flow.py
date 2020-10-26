@@ -58,23 +58,31 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         self._name = discovery_info.get(ATTR_UPNP_FRIENDLY_NAME)
         self.context[CONF_HOST] = self._host
 
+        uuid = discovery_info.get(ATTR_UPNP_UDN)
+        if uuid:
+            if uuid.startswith("uuid:"):
+                uuid = uuid[5:]
+            await self.async_set_unique_id(uuid)
+            self._abort_if_unique_id_configured({CONF_HOST: self._host})
+
         for progress in self._async_in_progress():
             if progress.get("context", {}).get(CONF_HOST) == self._host:
                 return self.async_abort(reason="already_in_progress")
 
-        # abort if already configured
         for entry in self.hass.config_entries.async_entries(DOMAIN):
             if entry.data[CONF_HOST] == self._host:
+                if uuid and not entry.unique_id:
+                    self.hass.config_entries.async_update_entry(entry, unique_id=uuid)
                 return self.async_abort(reason="already_configured")
 
         self.context["title_placeholders"] = {"name": self._name.replace("FRITZ!Box ", "")}
-        return await self._show_setup_form_confirm()
+        return await self.async_step_confirm()
 
     async def async_step_confirm(self, user_input=None):
         """Handle user-confirmation of discovered node."""
 
         if user_input is None:
-            return await self._show_setup_form_confirm()
+            return self._show_setup_form_confirm()
 
         errors = {}
 
@@ -94,9 +102,9 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
 
         if not success:
             errors["base"] = error
-            return await self._show_setup_form_confirm(errors)
+            return self._show_setup_form_confirm(errors)
 
-        return await self._show_setup_form_options(errors)
+        return self._show_setup_form_options(errors)
 
     async def _show_setup_form_init(self, errors=None):
         """Show the setup form to the user."""
@@ -113,7 +121,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             errors=errors or {},
         )
 
-    async def _show_setup_form_confirm(self, errors=None):
+    def _show_setup_form_confirm(self, errors=None):
         """Show the setup form to the user."""
         return self.async_show_form(
             step_id="confirm",
@@ -127,7 +135,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             errors=errors or {},
         )
 
-    async def _show_setup_form_profiles(self, errors=None):
+    def _show_setup_form_profiles(self, errors=None):
         """Show the setup form to the user."""
         return self.async_show_form(
             step_id="setup_profiles",
@@ -139,7 +147,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             errors=errors or {},
         )
 
-    async def _show_setup_form_options(self, errors=None):
+    def _show_setup_form_options(self, errors=None):
         """Show the setup form to the user."""
         return self.async_show_form(
             step_id="setup_options",
@@ -156,8 +164,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initiated by the user."""
-
-        return await self._show_setup_form_init()
+        return await self.async_step_start_config()
 
     async def async_step_start_config(self, user_input=None):
         if user_input is None:
@@ -188,9 +195,9 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
 
         if not success:
             errors["base"] = error
-            return await self._show_setup_form_init(errors)
+            return self._show_setup_form_init(errors)
 
-        return await self._show_setup_form_options(errors)
+        return self._show_setup_form_options(errors)
 
     async def async_step_setup_options(self, user_input=None):
         self._use_port = user_input.get(CONF_USE_PORT, DEFAULT_USE_PORT)
@@ -200,7 +207,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
 
         if self._use_profiles:
             errors = {}
-            return await self._show_setup_form_profiles(errors)
+            return self._show_setup_form_profiles(errors)
         else:
             profiles = []
             return self.async_create_entry(
@@ -235,7 +242,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         errors = {}
         if not success:
             errors["base"] = error
-            return await self._show_setup_form_profiles(errors)
+            return self._show_setup_form_profiles(errors)
 
         return self.async_create_entry(
             title=self._name,
