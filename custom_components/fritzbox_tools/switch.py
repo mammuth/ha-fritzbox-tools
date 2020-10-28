@@ -30,7 +30,7 @@ async def async_setup_entry(
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][entry.entry_id]
 
     def _create_deflection_switches():
-        if "X_AVM-DE_OnTel:1" in fritzbox_tools.connection.services:
+        if "X_AVM-DE_OnTel1" in fritzbox_tools.connection.services:
             deflections_response = fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetNumberOfDeflections")
         else:
             return
