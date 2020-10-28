@@ -71,6 +71,7 @@ class FritzBoxConnectivitySensor(BinarySensorEntity):
                 is_up = await self.hass.async_add_executor_job(connection)
                 self._is_on = is_up == "Up"
             else:
+                _LOGGER.error(self.fritzbox_tools.connection.services.keys()) # todo: remove!!!
                 self._is_on = self.hass.async_add_executor_job(self.fritzbox_tools.fritzstatus.is_connected)
 
             self._is_available = True
