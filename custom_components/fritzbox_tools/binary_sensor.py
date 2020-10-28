@@ -24,7 +24,10 @@ async def async_setup_entry(
     _LOGGER.debug("Setting up sensors")
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][entry.entry_id]
 
-    async_add_entities([FritzBoxConnectivitySensor(fritzbox_tools)], True)
+    if "WANIPConn1" in fritzbox_tools.connection.services:
+        """ We do not support repeaters at the moment """
+        async_add_entities([FritzBoxConnectivitySensor(fritzbox_tools)], True)
+
     return True
 
 
@@ -71,7 +74,6 @@ class FritzBoxConnectivitySensor(BinarySensorEntity):
                 is_up = await self.hass.async_add_executor_job(connection)
                 self._is_on = is_up == "Up"
             else:
-                _LOGGER.error(self.fritzbox_tools.connection.services.keys()) # todo: remove!!!
                 self._is_on = self.hass.async_add_executor_job(self.fritzbox_tools.fritzstatus.is_connected)
 
             self._is_available = True
