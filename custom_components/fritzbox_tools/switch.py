@@ -30,7 +30,10 @@ async def async_setup_entry(
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][entry.entry_id]
 
     def _create_deflection_switches():
-        deflections_response = fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetNumberOfDeflections")
+        if "X_AVM-DE_OnTel:1" in fritzbox_tools.connection.services:
+            deflections_response = fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetNumberOfDeflections")
+        else:
+            return
         _LOGGER.debug(deflections_response)
         _LOGGER.debug(fritzbox_tools.connection.services)
         if "X_AVM-DE_OnTel1" in fritzbox_tools.connection.services and deflections_response[
@@ -75,11 +78,16 @@ async def async_setup_entry(
                 _LOGGER.debug('Number of port forwards response')
                 _LOGGER.debug(port_forwards_count)
                 for i in range(port_forwards_count):
-                    portmap = fritzbox_tools.connection.call_action(
-                        connection_type,
-                        "GetGenericPortMappingEntry",
-                        NewPortMappingIndex=i,
-                    )
+                    try:
+                        portmap = fritzbox_tools.connection.call_action(
+                            connection_type,
+                            "GetGenericPortMappingEntry",
+                            NewPortMappingIndex=i,
+                        )
+                    except ValueError:
+                        _LOGGER.error("Do not use port forwarding ranges or disable port forwarding switches!")
+                        return
+
                     _LOGGER.debug("Specific port forward response")
                     _LOGGER.debug(portmap)
 

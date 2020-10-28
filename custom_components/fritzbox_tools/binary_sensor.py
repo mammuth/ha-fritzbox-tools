@@ -66,9 +66,13 @@ class FritzBoxConnectivitySensor(BinarySensorEntity):
     async def _async_fetch_update(self):
         self._is_on = True
         try:
-            connection = lambda: self.fritzbox_tools.connection.call_action("WANCommonInterfaceConfig1", "GetCommonLinkProperties")["NewPhysicalLinkStatus"]
-            is_up = await self.hass.async_add_executor_job(connection)
-            self._is_on = is_up == "Up"
+            if "WANCommonInterfaceConfig1" in self.fritzbox_tools.connection.services:
+                connection = lambda: self.fritzbox_tools.connection.call_action("WANCommonInterfaceConfig1", "GetCommonLinkProperties")["NewPhysicalLinkStatus"]
+                is_up = await self.hass.async_add_executor_job(connection)
+                self._is_on = is_up == "Up"
+            else:
+                self._is_on = self.hass.async_add_executor_job(self.fritzbox_tools.fritzstatus.is_connected)
+
             self._is_available = True
 
             status = self.fritzbox_tools.fritzstatus
