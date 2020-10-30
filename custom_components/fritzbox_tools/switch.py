@@ -66,6 +66,9 @@ async def async_setup_entry(
         if fritzbox_tools.ha_ip != "127.0.0.1":
             try:
                 _LOGGER.debug("Setting up port forward switches")
+                if "Layer3Forwarding1" not in fritzbox_tools.connection.services:
+                    _LOGGER.debug('The fritzbox has no port forwarding options')
+                    return
                 connection_type = fritzbox_tools.connection.call_action(
                     "Layer3Forwarding:1", "GetDefaultConnectionService"
                 )["NewDefaultConnectionService"]
