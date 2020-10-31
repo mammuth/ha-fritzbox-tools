@@ -81,7 +81,7 @@ class FritzBoxConnectivitySensor(BinarySensorEntity):
             status = self.fritzbox_tools.fritzstatus
             uptime_seconds = await self.hass.async_add_executor_job(lambda: getattr(status, "uptime"))
             last_reconnect = datetime.datetime.now() - datetime.timedelta(seconds=uptime_seconds)
-            self._attributes["last_reconnect"] = last_reconnect.replace(microsecond=1).isoformat()
+            self._attributes["last_reconnect"] = last_reconnect.replace(microsecond=0).isoformat()
 
             for attr in [
                 "modelname",
