@@ -30,7 +30,10 @@ async def async_setup_entry(
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][entry.entry_id]
 
     def _create_deflection_switches():
-        deflections_response = fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetNumberOfDeflections")
+        if "X_AVM-DE_OnTel1" in fritzbox_tools.connection.services:
+            deflections_response = fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetNumberOfDeflections")
+        else:
+            return
         _LOGGER.debug(deflections_response)
         _LOGGER.debug(fritzbox_tools.connection.services)
         if "X_AVM-DE_OnTel1" in fritzbox_tools.connection.services and deflections_response[
@@ -63,6 +66,9 @@ async def async_setup_entry(
         if fritzbox_tools.ha_ip != "127.0.0.1":
             try:
                 _LOGGER.debug("Setting up port forward switches")
+                if "Layer3Forwarding1" not in fritzbox_tools.connection.services:
+                    _LOGGER.debug('The fritzbox has no port forwarding options')
+                    return
                 connection_type = fritzbox_tools.connection.call_action(
                     "Layer3Forwarding:1", "GetDefaultConnectionService"
                 )["NewDefaultConnectionService"]
@@ -75,11 +81,16 @@ async def async_setup_entry(
                 _LOGGER.debug('Number of port forwards response')
                 _LOGGER.debug(port_forwards_count)
                 for i in range(port_forwards_count):
-                    portmap = fritzbox_tools.connection.call_action(
-                        connection_type,
-                        "GetGenericPortMappingEntry",
-                        NewPortMappingIndex=i,
-                    )
+                    try:
+                        portmap = fritzbox_tools.connection.call_action(
+                            connection_type,
+                            "GetGenericPortMappingEntry",
+                            NewPortMappingIndex=i,
+                        )
+                    except ValueError:
+                        _LOGGER.error("Do not use port forwarding ranges or disable port forwarding switches!")
+                        return
+
                     _LOGGER.debug("Specific port forward response")
                     _LOGGER.debug(portmap)
 
@@ -112,10 +123,13 @@ async def async_setup_entry(
                 )
 
     def _create_wifi_switches():
-        if "WLANConfiguration3" not in fritzbox_tools.connection.services:
-            networks = {"1": "Wifi", "2": "Guest Wifi"}
-        else:
+        if "WLANConfiguration4" in fritzbox_tools.connection.services:
+            networks = {"1": "Wifi", "2": "Wifi (5GHz)", "3":"Wifi (5GHz) - 2", "4": "Guest Wifi"}
+            # todo: come up with better names!
+        elif "WLANConfiguration3" in fritzbox_tools.connection.services:
             networks = {"1": "Wifi", "2": "Wifi (5GHz)", "3": "Guest Wifi"}
+        else:
+            networks = {"1": "Wifi", "2": "Guest Wifi"}
 
         for net in networks:
             hass.add_job(
