@@ -8,7 +8,7 @@ import voluptuous as vol
 
 import homeassistant.helpers.config_validation as cv
 from homeassistant import config_entries
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import SOURCE_IMPORT, SOURCE_REAUTH, ConfigEntry
 from homeassistant.const import (
     CONF_DEVICES,
     CONF_HOST,
@@ -43,6 +43,10 @@ REQUIREMENTS = ["fritzconnection==1.2.0", "fritz-switch-profiles==1.0.0", "xmlto
 
 DATA_FRITZ_TOOLS_INSTANCE = "fritzbox_tools_instance"
 ATTR_HOST = "host"
+
+ERROR_CONNECTION_ERROR = "connection_error"
+ERROR_CONNECTION_ERROR_PROFILES = "connection_error_profiles"
+ERROR_PROFILE_NOT_FOUND = "profile_not_found"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -95,7 +99,7 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
         for entry_config in config[DOMAIN][CONF_DEVICES]:
             hass.async_create_task(
                 hass.config_entries.flow.async_init(
-                    DOMAIN, context={"source": "import"}, data=entry_config
+                    DOMAIN, context={"source": SOURCE_IMPORT}, data=entry_config
                 )
             )
 
@@ -126,6 +130,18 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         use_port=use_port,
         use_profiles=use_profiles,
     ))
+
+    success, error = await hass.async_add_executor_job(fritz_tools.is_ok)
+    if not success and error is ERROR_CONNECTION_ERROR:       
+        _LOGGER.error("Unable to setup FRITZ!Box Tools component.")
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_REAUTH},
+                data=entry.data,
+            )
+        )
+        return False
 
     hass.data.setdefault(DOMAIN, {DATA_FRITZ_TOOLS_INSTANCE: {}, CONF_DEVICES: set()})
     hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][host] = fritz_tools
@@ -228,13 +244,13 @@ class FritzBoxTools(object):
             self.error = False
         except FritzConnectionException:
             self.success = False
-            self.error = "connection_error"
+            self.error = ERROR_CONNECTION_ERROR
         except PermissionError:
             self.success = False
-            self.error = "connection_error_profiles"
+            self.error = ERROR_CONNECTION_ERROR_PROFILES
         except AttributeError:
             self.success = False
-            self.error = "profile_not_found"
+            self.error = ERROR_PROFILE_NOT_FOUND
 
         self.ha_ip = get_local_ip()
         self.profile_list = profile_list
