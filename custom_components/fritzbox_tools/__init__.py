@@ -37,16 +37,15 @@ from .const import (
     DEFAULT_USE_PROFILES,
     DEFAULT_USE_DEFLECTIONS,
     DEFAULT_USE_PORT,
+    ERROR_CONNECTION_ERROR,
+    ERROR_CONNECTION_ERROR_PROFILES,
+    ERROR_PROFILE_NOT_FOUND,
 )
 
 REQUIREMENTS = ["fritzconnection==1.2.0", "fritz-switch-profiles==1.0.0", "xmltodict==0.12.0"]
 
 DATA_FRITZ_TOOLS_INSTANCE = "fritzbox_tools_instance"
 ATTR_HOST = "host"
-
-ERROR_CONNECTION_ERROR = "connection_error"
-ERROR_CONNECTION_ERROR_PROFILES = "connection_error_profiles"
-ERROR_PROFILE_NOT_FOUND = "profile_not_found"
 
 _LOGGER = logging.getLogger(__name__)
 
