@@ -336,7 +336,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_USERNAME, default=user_input.get(CONF_USERNAME)): str,
-                    vol.Required(CONF_PASSWORD, default=user_input.get(CONF_PASSWORD)): str,
+                    vol.Required(CONF_PASSWORD): str,
                 }
             ),
             description_placeholders={"host": self._host},
@@ -347,9 +347,8 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         """Dialog that informs the user that reauth is required."""
         if user_input is None:
             return self._show_setup_form_reauth_confirm(
-                user_input = {
-                    CONF_USERNAME: self._username,
-                    CONF_PASSWORD: self._password
+                user_input={
+                    CONF_USERNAME: self._username
                 }
             )
 
