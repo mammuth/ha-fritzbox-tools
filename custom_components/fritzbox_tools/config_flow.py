@@ -294,7 +294,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
 
         for entry in self.hass.config_entries.async_entries(DOMAIN):
             if entry.data[CONF_HOST] == host:
-                return self.async_abort()
+                return self.async_abort(reason='ready')
 
         if not success:
             _LOGGER.error('Import of config failed. Check your fritzbox credentials', error)
