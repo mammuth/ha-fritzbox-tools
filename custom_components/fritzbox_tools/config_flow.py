@@ -1,40 +1,34 @@
 """Config flow to configure the FRITZ!Box Tools integration."""
 import logging
+from urllib.parse import urlparse
 
 import voluptuous as vol
-from urllib.parse import urlparse
+
 from homeassistant import config_entries
-from .const import (
-    DOMAIN,
-    CONF_USE_DEFLECTIONS,
-    CONF_USE_PROFILES,
-    CONF_USE_WIFI,
-    CONF_USE_PORT,
-    CONF_PROFILES,
-    DEFAULT_USERNAME,
-    DEFAULT_PROFILES,
-    DEFAULT_HOST,
-    DEFAULT_PORT,
-    DEFAULT_USE_DEFLECTIONS,
-    DEFAULT_USE_WIFI,
-    DEFAULT_USE_PROFILES,
-    DEFAULT_USE_PORT,
-    SUPPORTED_DOMAINS,
-)
 from homeassistant.components.ssdp import (
     ATTR_SSDP_LOCATION,
     ATTR_UPNP_FRIENDLY_NAME,
     ATTR_UPNP_UDN,
 )
 from homeassistant.config_entries import ConfigFlow
-from homeassistant.const import (
-    CONF_HOST,
-    CONF_PASSWORD,
-    CONF_USERNAME,
-    CONF_PORT,
-)
+from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_PORT, CONF_USERNAME
 
-from . import FritzBoxTools, CONFIG_SCHEMA
+from . import CONFIG_SCHEMA, FritzBoxTools
+from .const import (
+    CONF_PROFILES,
+    CONF_USE_DEFLECTIONS,
+    CONF_USE_PORT,
+    CONF_USE_PROFILES,
+    CONF_USE_WIFI,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+    DEFAULT_PROFILES,
+    DEFAULT_USE_DEFLECTIONS,
+    DEFAULT_USE_PORT,
+    DEFAULT_USE_PROFILES,
+    DEFAULT_USE_WIFI,
+    DOMAIN,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -75,7 +69,9 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                     self.hass.config_entries.async_update_entry(entry, unique_id=uuid)
                 return self.async_abort(reason="already_configured")
 
-        self.context["title_placeholders"] = {"name": self._name.replace("FRITZ!Box ", "")}
+        self.context["title_placeholders"] = {
+            "name": self._name.replace("FRITZ!Box ", "")
+        }
         return await self.async_step_confirm()
 
     async def async_step_confirm(self, user_input=None):
@@ -91,13 +87,15 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         username = user_input.get(CONF_USERNAME)
         password = user_input.get(CONF_PASSWORD)
 
-        self.fritz_tools = await self.hass.async_add_executor_job(lambda: FritzBoxTools(
-            host=host,
-            port=port,
-            username=username,
-            password=password,
-            profile_list=[]
-        ))
+        self.fritz_tools = await self.hass.async_add_executor_job(
+            lambda: FritzBoxTools(
+                host=host,
+                port=port,
+                username=username,
+                password=password,
+                profile_list=[],
+            )
+        )
         success, error = await self.hass.async_add_executor_job(self.fritz_tools.is_ok)
 
         if not success:
@@ -156,7 +154,9 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                     vol.Required(CONF_USE_WIFI, default=DEFAULT_USE_WIFI): bool,
                     vol.Required(CONF_USE_PORT, default=DEFAULT_USE_PORT): bool,
                     vol.Required(CONF_USE_PROFILES, default=DEFAULT_USE_PROFILES): bool,
-                    vol.Required(CONF_USE_DEFLECTIONS, default=DEFAULT_USE_DEFLECTIONS): bool,
+                    vol.Required(
+                        CONF_USE_DEFLECTIONS, default=DEFAULT_USE_DEFLECTIONS
+                    ): bool,
                 }
             ),
             errors=errors or {},
@@ -167,6 +167,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         return await self.async_step_start_config()
 
     async def async_step_start_config(self, user_input=None):
+        """Handle a flow start config."""
         if user_input is None:
             return self._show_setup_form_init()
 
@@ -177,13 +178,15 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         username = user_input.get(CONF_USERNAME)
         password = user_input.get(CONF_PASSWORD)
 
-        self.fritz_tools = await self.hass.async_add_executor_job(lambda: FritzBoxTools(
-            host=host,
-            port=port,
-            username=username,
-            password=password,
-            profile_list=[]
-        ))
+        self.fritz_tools = await self.hass.async_add_executor_job(
+            lambda: FritzBoxTools(
+                host=host,
+                port=port,
+                username=username,
+                password=password,
+                profile_list=[],
+            )
+        )
 
         success, error = await self.hass.async_add_executor_job(self.fritz_tools.is_ok)
         self._name = self.fritz_tools.device_info["model"]
@@ -200,8 +203,11 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         return self._show_setup_form_options(errors)
 
     async def async_step_setup_options(self, user_input=None):
+        """Handle flow setup options."""
         self._use_port = user_input.get(CONF_USE_PORT, DEFAULT_USE_PORT)
-        self._use_deflections = user_input.get(CONF_USE_DEFLECTIONS, DEFAULT_USE_DEFLECTIONS)
+        self._use_deflections = user_input.get(
+            CONF_USE_DEFLECTIONS, DEFAULT_USE_DEFLECTIONS
+        )
         self._use_wifi = user_input.get(CONF_USE_WIFI, DEFAULT_USE_WIFI)
         self._use_profiles = user_input.get(CONF_USE_PROFILES, DEFAULT_USE_PROFILES)
 
@@ -226,17 +232,20 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             )
 
     async def async_step_setup_profiles(self, user_input=None):
+        """Handle flow setup profiles."""
         profiles = user_input.get(CONF_PROFILES, DEFAULT_PROFILES)
         if isinstance(profiles, str):
-            profiles = profiles.replace(', ', ',').split(',')
+            profiles = profiles.replace(", ", ",").split(",")
 
-        self.fritz_tools = await self.hass.async_add_executor_job(lambda: FritzBoxTools(
-            host=self.fritz_tools.host,
-            port=self.fritz_tools.port,
-            username=self.fritz_tools.username,
-            password=self.fritz_tools.password,
-            profile_list=profiles,
-        ))
+        self.fritz_tools = await self.hass.async_add_executor_job(
+            lambda: FritzBoxTools(
+                host=self.fritz_tools.host,
+                port=self.fritz_tools.port,
+                username=self.fritz_tools.username,
+                password=self.fritz_tools.password,
+                profile_list=profiles,
+            )
+        )
         success, error = await self.hass.async_add_executor_job(self.fritz_tools.is_ok)
 
         errors = {}
@@ -271,8 +280,6 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         _LOGGER.debug("start step import_config")
         self.import_schema = CONFIG_SCHEMA
 
-        errors = {}
-
         host = import_config.get(CONF_HOST, DEFAULT_HOST)
         port = import_config.get(CONF_PORT, DEFAULT_PORT)
         username = import_config.get(CONF_USERNAME)
@@ -282,22 +289,26 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         if isinstance(profiles, str):
             profiles = profiles.replace(" ", "").split(",")
 
-        fritz_tools = await self.hass.async_add_executor_job(lambda: FritzBoxTools(
-            host=host,
-            port=port,
-            username=username,
-            password=password,
-            profile_list=profiles,
-        ))
+        fritz_tools = await self.hass.async_add_executor_job(
+            lambda: FritzBoxTools(
+                host=host,
+                port=port,
+                username=username,
+                password=password,
+                profile_list=profiles,
+            )
+        )
         success, error = await self.hass.async_add_executor_job(fritz_tools.is_ok)
         self._name = fritz_tools.device_info["model"]
 
         for entry in self.hass.config_entries.async_entries(DOMAIN):
             if entry.data[CONF_HOST] == host:
-                return self.async_abort(reason='ready')
+                return self.async_abort(reason="ready")
 
         if not success:
-            _LOGGER.error('Import of config failed. Check your fritzbox credentials', error)
+            _LOGGER.error(
+                "Import of config failed. Check your fritzbox credentials", error
+            )
 
         return self.async_create_entry(
             title=self._name,
