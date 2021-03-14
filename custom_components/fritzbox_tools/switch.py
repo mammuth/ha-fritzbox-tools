@@ -1,22 +1,25 @@
-"""Switches for AVM Fritz!Box functions"""
-import logging
-from typing import List  # noqa
+"""Switches for AVM Fritz!Box functions."""
+from collections import defaultdict
 from datetime import timedelta
+import logging
 import time
-import xmltodict
+from typing import List  # noqa
 
-from collections import Counter, defaultdict
+import xmltodict
 
 try:
     from homeassistant.components.switch import ENTITY_ID_FORMAT, SwitchEntity
 except ImportError:
-    from homeassistant.components.switch import ENTITY_ID_FORMAT, SwitchDevice as SwitchEntity
+    from homeassistant.components.switch import (
+        ENTITY_ID_FORMAT,
+        SwitchDevice as SwitchEntity,
+    )
 
-from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.util import slugify
 
-from . import DOMAIN, DATA_FRITZ_TOOLS_INSTANCE
+from . import DATA_FRITZ_TOOLS_INSTANCE, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,24 +27,31 @@ SCAN_INTERVAL = timedelta(seconds=30)  # update of profile switch takes too long
 
 
 async def async_setup_entry(
-        hass: HomeAssistantType, entry: ConfigEntry, async_add_entities
+    hass: HomeAssistantType, entry: ConfigEntry, async_add_entities
 ) -> None:
+    """Set up entry."""
     _LOGGER.debug("Setting up switches")
     fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][entry.entry_id]
 
     def _create_deflection_switches():
         if "X_AVM-DE_OnTel1" in fritzbox_tools.connection.services:
-            deflections_response = fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetNumberOfDeflections")
+            deflections_response = fritzbox_tools.connection.call_action(
+                "X_AVM-DE_OnTel:1", "GetNumberOfDeflections"
+            )
         else:
             return
         _LOGGER.debug(deflections_response)
         _LOGGER.debug(fritzbox_tools.connection.services)
-        if "X_AVM-DE_OnTel1" in fritzbox_tools.connection.services and deflections_response[
-            "NewNumberOfDeflections"] != 0:
+        if (
+            "X_AVM-DE_OnTel1" in fritzbox_tools.connection.services
+            and deflections_response["NewNumberOfDeflections"] != 0
+        ):
             try:
                 _LOGGER.debug("Setting up deflection switches")
                 deflections = xmltodict.parse(
-                    fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetDeflections")["NewDeflectionList"]
+                    fritzbox_tools.connection.call_action(
+                        "X_AVM-DE_OnTel:1", "GetDeflections"
+                    )["NewDeflectionList"]
                 )["List"]["Item"]
                 if not isinstance(deflections, list):
                     deflections = [deflections]
@@ -49,16 +59,12 @@ async def async_setup_entry(
                 for dict_of_deflection in deflections:
                     hass.add_job(
                         async_add_entities,
-                        [
-                            FritzBoxDeflectionSwitch(
-                                fritzbox_tools, dict_of_deflection
-                            )
-                        ],
+                        [FritzBoxDeflectionSwitch(fritzbox_tools, dict_of_deflection)],
                     )
 
             except Exception:
                 _LOGGER.error(
-                    f"Call Deflection switches could not be enabled.",
+                    "Call Deflection switches could not be enabled.",
                     exc_info=True,
                 )
 
@@ -67,7 +73,7 @@ async def async_setup_entry(
             try:
                 _LOGGER.debug("Setting up port forward switches")
                 if "Layer3Forwarding1" not in fritzbox_tools.connection.services:
-                    _LOGGER.debug('The fritzbox has no port forwarding options')
+                    _LOGGER.debug("The fritzbox has no port forwarding options")
                     return
                 connection_type = fritzbox_tools.connection.call_action(
                     "Layer3Forwarding:1", "GetDefaultConnectionService"
@@ -78,7 +84,7 @@ async def async_setup_entry(
                 port_forwards_count: int = fritzbox_tools.connection.call_action(
                     connection_type, "GetPortMappingNumberOfEntries"
                 )["NewPortMappingNumberOfEntries"]
-                _LOGGER.debug('Number of port forwards response')
+                _LOGGER.debug("Number of port forwards response")
                 _LOGGER.debug(port_forwards_count)
                 for i in range(port_forwards_count):
                     try:
@@ -88,13 +94,17 @@ async def async_setup_entry(
                             NewPortMappingIndex=i,
                         )
                     except ValueError:
-                        _LOGGER.error("Do not use port forwarding ranges or disable port forwarding switches!")
+                        _LOGGER.error(
+                            "Do not use port forwarding ranges or disable port forwarding switches!"
+                        )
                         return
 
                     _LOGGER.debug("Specific port forward response")
                     _LOGGER.debug(portmap)
 
-                    _LOGGER.debug(f"Port forwards of the following device are shown: {fritzbox_tools.ha_ip}")
+                    _LOGGER.debug(
+                        f"Port forwards of the following device are shown: {fritzbox_tools.ha_ip}"
+                    )
 
                     # We can only handle port forwards of the given device
                     if portmap["NewInternalClient"] == fritzbox_tools.ha_ip:
@@ -109,7 +119,7 @@ async def async_setup_entry(
 
             except Exception:
                 _LOGGER.error(
-                    f"Port switches could not be enabled. Check if your fritzbox is able to do port forwardings!",
+                    "Port switches could not be enabled. Check if your fritzbox is able to do port forwardings!",
                     exc_info=True,
                 )
 
@@ -124,7 +134,12 @@ async def async_setup_entry(
 
     def _create_wifi_switches():
         if "WLANConfiguration4" in fritzbox_tools.connection.services:
-            networks = {"1": "Wifi", "2": "Wifi (5GHz)", "3":"Wifi (5GHz) - 2", "4": "Guest Wifi"}
+            networks = {
+                "1": "Wifi",
+                "2": "Wifi (5GHz)",
+                "3": "Wifi (5GHz) - 2",
+                "4": "Guest Wifi",
+            }
             # todo: come up with better names!
         elif "WLANConfiguration3" in fritzbox_tools.connection.services:
             networks = {"1": "Wifi", "2": "Wifi (5GHz)", "3": "Guest Wifi"}
@@ -161,6 +176,7 @@ class FritzBoxPortSwitch(SwitchEntity):
     _update_grace_period = 5  # seconds
 
     def __init__(self, fritzbox_tools, port_mapping, idx, connection_type):
+        """Init Fritzbox port switch."""
         self.fritzbox_tools = fritzbox_tools
         self.connection_type = connection_type
         self.port_mapping: dict = port_mapping  # dict in the format as it comes from fritzconnection. eg: {'NewRemoteHost': '0.0.0.0', 'NewExternalPort': 22, 'NewProtocol': 'TCP', 'NewInternalPort': 22, 'NewInternalClient': '192.168.178.31', 'NewEnabled': True, 'NewPortMappingDescription': 'Beast SSH ', 'NewLeaseDuration': 0}  # noqa
@@ -172,7 +188,7 @@ class FritzBoxPortSwitch(SwitchEntity):
 
         self._attributes = defaultdict(str)
         self._is_available = (
-            True  # set to False if an error happend during toggling the switch
+            True  # set to False if an error happened during toggling the switch
         )
         self._is_on = self.port_mapping["NewEnabled"] is True
 
@@ -182,29 +198,36 @@ class FritzBoxPortSwitch(SwitchEntity):
 
     @property
     def name(self):
+        """Return name."""
         return self._name
 
     @property
     def unique_id(self):
+        """Return unique id."""
         return f"{self.fritzbox_tools.unique_id}-{self.entity_id}"
 
     @property
     def device_info(self):
+        """Return device info."""
         return self.fritzbox_tools.device_info
 
     @property
     def is_on(self) -> bool:
+        """Return status."""
         return self._is_on
 
     @property
     def available(self) -> bool:
+        """Return availability."""
         return self._is_available
 
     @property
     def device_state_attributes(self) -> dict:
+        """Return device attributes."""
         return self._attributes
 
     async def _async_fetch_update(self):
+        """Fetch updates."""
         from fritzconnection.core.exceptions import FritzConnectionException
 
         try:
@@ -213,7 +236,8 @@ class FritzBoxPortSwitch(SwitchEntity):
                     self.connection_type,
                     "GetGenericPortMappingEntry",
                     NewPortMappingIndex=self._idx,
-                ))
+                )
+            )
             _LOGGER.debug(self.port_mapping)
             self._is_on = self.port_mapping["NewEnabled"] is True
             self._is_available = True
@@ -236,13 +260,14 @@ class FritzBoxPortSwitch(SwitchEntity):
             self._is_available = False  # noqa
 
     async def async_update(self):
+        """Update data."""
         if (
-                self._last_toggle_timestamp is not None
-                and time.time() < self._last_toggle_timestamp + self._update_grace_period
+            self._last_toggle_timestamp is not None
+            and time.time() < self._last_toggle_timestamp + self._update_grace_period
         ):
             # We skip update for 5 seconds after toggling the switch
             _LOGGER.debug(
-                "Not updating switch state, because last toggle happend < 5 seconds ago"
+                "Not updating switch state, because last toggle happened < 5 seconds ago"
             )
         else:
             _LOGGER.debug("Updating port switch state...")
@@ -250,6 +275,7 @@ class FritzBoxPortSwitch(SwitchEntity):
             await self._async_fetch_update()
 
     async def async_turn_on(self, **kwargs) -> None:
+        """Turn on port switch."""
         success: bool = await self._async_handle_port_switch_on_off(turn_on=True)
         if success is True:
             self._is_on = True
@@ -261,6 +287,7 @@ class FritzBoxPortSwitch(SwitchEntity):
             )
 
     async def async_turn_off(self, **kwargs) -> None:
+        """Turn off port switch."""
         success: bool = await self._async_handle_port_switch_on_off(turn_on=False)
         if success is True:
             self._is_on = False
@@ -273,13 +300,18 @@ class FritzBoxPortSwitch(SwitchEntity):
 
     async def _async_handle_port_switch_on_off(self, turn_on: bool) -> bool:
         # pylint: disable=import-error
-        from fritzconnection.core.exceptions import FritzSecurityError, FritzConnectionException
+        from fritzconnection.core.exceptions import (
+            FritzConnectionException,
+            FritzSecurityError,
+        )
 
         self.port_mapping["NewEnabled"] = "1" if turn_on else "0"
         try:
-            self.hass.async_add_executor_job(lambda: self.fritzbox_tools.connection.call_action(
-                self.connection_type, "AddPortMapping", **self.port_mapping
-            ))
+            self.hass.async_add_executor_job(
+                lambda: self.fritzbox_tools.connection.call_action(
+                    self.connection_type, "AddPortMapping", **self.port_mapping
+                )
+            )
         except FritzSecurityError:
             _LOGGER.error(
                 "Authorization Error: Please check the provided credentials and verify that you can log into "
@@ -303,6 +335,7 @@ class FritzBoxDeflectionSwitch(SwitchEntity):
     _update_grace_period = 30  # seconds
 
     def __init__(self, fritzbox_tools, dict_of_deflection):
+        """Init Fritxbox Deflection class."""
         self.fritzbox_tools = fritzbox_tools
         self.dict_of_deflection = dict_of_deflection
         self.id = int(self.dict_of_deflection["DeflectionId"])
@@ -312,7 +345,7 @@ class FritzBoxDeflectionSwitch(SwitchEntity):
 
         self._attributes = defaultdict(str)
         self._is_available = (
-            True  # set to False if an error happend during toggling the switch
+            True  # set to False if an error happened during toggling the switch
         )
         self._is_on = self.dict_of_deflection["Enable"] is True
 
@@ -321,50 +354,61 @@ class FritzBoxDeflectionSwitch(SwitchEntity):
 
     @property
     def name(self):
+        """Return name."""
         return self._name
 
     @property
     def unique_id(self):
+        """Return unique id."""
         return f"{self.fritzbox_tools.unique_id}-{self.entity_id}"
 
     @property
     def device_info(self):
+        """Return device info."""
         return self.fritzbox_tools.device_info
 
     @property
     def is_on(self) -> bool:
+        """Return status."""
         return self._is_on
 
     @property
     def available(self) -> bool:
+        """Return availability."""
         return self._is_available
 
     @property
     def device_state_attributes(self) -> dict:
+        """Return device attributes."""
         return self._attributes
 
     async def _async_fetch_update(self):
+        """Fetch updates."""
         from fritzconnection.core.exceptions import FritzConnectionException
 
         try:
             resp = await self.hass.async_add_executor_job(
-                lambda: self.fritzbox_tools.connection.call_action("X_AVM-DE_OnTel:1", "GetDeflections")
+                lambda: self.fritzbox_tools.connection.call_action(
+                    "X_AVM-DE_OnTel:1", "GetDeflections"
+                )
             )
-            self.dict_of_deflection = xmltodict.parse(
-                resp["NewDeflectionList"]
-            )["List"]["Item"]
+            self.dict_of_deflection = xmltodict.parse(resp["NewDeflectionList"])[
+                "List"
+            ]["Item"]
             if isinstance(self.dict_of_deflection, list):
                 self.dict_of_deflection = self.dict_of_deflection[self.id]
 
             _LOGGER.debug("GetDeflections:")
             _LOGGER.debug(self.dict_of_deflection)
 
-            self._is_on = self.dict_of_deflection["Enable"] == '1'
+            self._is_on = self.dict_of_deflection["Enable"] == "1"
             self._is_available = True
 
             self._attributes["Type"] = self.dict_of_deflection["Type"]
             self._attributes["Number"] = self.dict_of_deflection["Number"]
-            self._attributes["DeflectionToNumber"] = self.dict_of_deflection["DeflectionToNumber"]
+            self._attributes["DeflectionToNumber"] = self.dict_of_deflection[
+                "DeflectionToNumber"
+            ]
             self._attributes["Mode"] = self.dict_of_deflection["Mode"]
             self._attributes["Outgoing"] = self.dict_of_deflection["Outgoing"]
             self._attributes["PhonebookID"] = self.dict_of_deflection["PhonebookID"]
@@ -380,13 +424,14 @@ class FritzBoxDeflectionSwitch(SwitchEntity):
             self._is_available = False  # noqa
 
     async def async_update(self):
+        """Update data."""
         if (
-                self._last_toggle_timestamp is not None
-                and time.time() < self._last_toggle_timestamp + self._update_grace_period
+            self._last_toggle_timestamp is not None
+            and time.time() < self._last_toggle_timestamp + self._update_grace_period
         ):
             # We skip update for 5 seconds after toggling the switch
             _LOGGER.debug(
-                "Not updating switch state, because last toggle happend < 5 seconds ago"
+                "Not updating switch state, because last toggle happened < 5 seconds ago"
             )
         else:
             _LOGGER.debug("Updating call deflection switch state...")
@@ -394,6 +439,7 @@ class FritzBoxDeflectionSwitch(SwitchEntity):
             await self._async_fetch_update()
 
     async def async_turn_on(self, **kwargs) -> None:
+        """Turn on switch."""
         success: bool = await self._async_handle_deflection_switch_on_off(turn_on=True)
         if success is True:
             self._is_on = True
@@ -405,6 +451,7 @@ class FritzBoxDeflectionSwitch(SwitchEntity):
             )
 
     async def async_turn_off(self, **kwargs) -> None:
+        """Turn off switch."""
         success: bool = await self._async_handle_deflection_switch_on_off(turn_on=False)
         if success is True:
             self._is_on = False
@@ -416,14 +463,23 @@ class FritzBoxDeflectionSwitch(SwitchEntity):
             )
 
     async def _async_handle_deflection_switch_on_off(self, turn_on: bool) -> bool:
+        """Handle deflection switch."""
         # pylint: disable=import-error
-        from fritzconnection.core.exceptions import FritzSecurityError, FritzConnectionException
+        from fritzconnection.core.exceptions import (
+            FritzConnectionException,
+            FritzSecurityError,
+        )
 
-        new_state = '1' if turn_on else '0'
+        new_state = "1" if turn_on else "0"
         try:
-            self.hass.async_add_executor_job(lambda: self.fritzbox_tools.connection.call_action(
-                "X_AVM-DE_OnTel:1", "SetDeflectionEnable", NewDeflectionId=self.id, NewEnable=new_state
-            ))
+            self.hass.async_add_executor_job(
+                lambda: self.fritzbox_tools.connection.call_action(
+                    "X_AVM-DE_OnTel:1",
+                    "SetDeflectionEnable",
+                    NewDeflectionId=self.id,
+                    NewEnable=new_state,
+                )
+            )
         except FritzSecurityError:
             _LOGGER.error(
                 "Authorization Error: Please check the provided credentials and verify that you can log into "
@@ -449,6 +505,7 @@ class FritzBoxProfileSwitch(SwitchEntity):
     _update_grace_period = 30  # seconds
 
     def __init__(self, fritzbox_tools, profile):
+        """Init Fritz profile."""
         self.fritzbox_tools = fritzbox_tools
         self.profile = profile
         self.profile_switch = self.fritzbox_tools.profile_switch[self.profile]
@@ -464,25 +521,31 @@ class FritzBoxProfileSwitch(SwitchEntity):
 
     @property
     def name(self):
+        """Return name."""
         return self._name
 
     @property
     def unique_id(self):
+        """Return unique id."""
         return f"{self.fritzbox_tools.unique_id}-{self.entity_id}"
 
     @property
     def device_info(self):
+        """Return device info."""
         return self.fritzbox_tools.device_info
 
     @property
     def is_on(self) -> bool:
+        """Return status."""
         return self._is_on
 
     @property
     def available(self) -> bool:
+        """Return availability."""
         return self._is_available
 
     async def async_update(self):
+        """Update data."""
         try:
             status = await self.hass.async_add_executor_job(
                 lambda: self.profile_switch.get_state()
@@ -496,12 +559,11 @@ class FritzBoxProfileSwitch(SwitchEntity):
             else:
                 self._is_available = False
         except Exception:
-            _LOGGER.error(
-                f"Could not get state of profile switch", exc_info=True
-            )
+            _LOGGER.error("Could not get state of profile switch", exc_info=True)
             self._is_available = False
 
     async def async_turn_on(self, **kwargs) -> None:
+        """Turn on profile switch."""
         success: bool = await self._async_handle_profile_switch_on_off(turn_on=True)
         if success is True:
             self._is_on = True
@@ -513,6 +575,7 @@ class FritzBoxProfileSwitch(SwitchEntity):
             )
 
     async def async_turn_off(self, **kwargs) -> None:
+        """Turn off profile switch."""
         success: bool = await self._async_handle_profile_switch_on_off(turn_on=False)
         if success is True:
             self._is_on = False
@@ -524,13 +587,16 @@ class FritzBoxProfileSwitch(SwitchEntity):
             )
 
     async def _async_handle_profile_switch_on_off(self, turn_on: bool) -> bool:
+        """Handle profile switch."""
         # pylint: disable=import-error
         state = "unlimited" if turn_on else "never"
         try:
-            await self.hass.async_add_executor_job(lambda: self.profile_switch.set_state(state))
+            await self.hass.async_add_executor_job(
+                lambda: self.profile_switch.set_state(state)
+            )
         except Exception:
             _LOGGER.error(
-                f"Home Assistant cannot call the wished service on the FRITZ!Box.",
+                "Home Assistant cannot call the wished service on the FRITZ!Box.",
                 exc_info=True,
             )
             return False
@@ -545,45 +611,56 @@ class FritzBoxWifiSwitch(SwitchEntity):
     _update_grace_period = 5  # seconds
 
     def __init__(self, fritzbox_tools, network_num, network_name):
+        """Init Fritz Wifi switch."""
         self._fritzbox_tools = fritzbox_tools
         self._network_num = network_num
-        id = network_name.lower().replace(' ', '_').replace('(', '').replace(')', '')
-        self.entity_id = ENTITY_ID_FORMAT.format(f"fritzbox_{self._fritzbox_tools.fritzbox_model}_{id}")
+        id = network_name.lower().replace(" ", "_").replace("(", "").replace(")", "")
+        self.entity_id = ENTITY_ID_FORMAT.format(
+            f"fritzbox_{self._fritzbox_tools.fritzbox_model}_{id}"
+        )
         self._name = f"FRITZ!Box {network_name}"
         self._is_on = None
         self._last_toggle_timestamp = None
         self._is_available = (
-            True  # set to False if an error happend during toggling the switch
+            True  # set to False if an error happened during toggling the switch
         )
         super().__init__()
 
     @property
     def name(self):
+        """Return name."""
         return self._name
 
     @property
     def unique_id(self):
+        """Return unique id."""
         return f"{self._fritzbox_tools.unique_id}-{self.entity_id}"
 
     @property
     def device_info(self):
+        """Return device info."""
         return self._fritzbox_tools.device_info
 
     @property
     def is_on(self) -> bool:
+        """Return status."""
         return self._is_on
 
     @property
     def available(self) -> bool:
+        """Return availability."""
         return self._is_available
 
     async def _async_fetch_update(self):
+        """Fetch updates."""
         from fritzconnection.core.exceptions import FritzConnectionException
 
         try:
-            wifi_info = await self.hass.async_add_executor_job(lambda: self._fritzbox_tools.connection.call_action(
-                f"WLANConfiguration:{self._network_num}", "GetInfo"
-            ))
+            wifi_info = await self.hass.async_add_executor_job(
+                lambda: self._fritzbox_tools.connection.call_action(
+                    f"WLANConfiguration:{self._network_num}", "GetInfo"
+                )
+            )
             _LOGGER.debug("WiFi GetInfo:")
             _LOGGER.debug(wifi_info)
             self._is_on = wifi_info["NewEnable"] is True
@@ -600,14 +677,15 @@ class FritzBoxWifiSwitch(SwitchEntity):
             self._is_available = False
 
     async def async_update(self):
+        """Update data."""
         if (
-                self._last_toggle_timestamp is not None
-                and time.time() < self._last_toggle_timestamp + self._update_grace_period
+            self._last_toggle_timestamp is not None
+            and time.time() < self._last_toggle_timestamp + self._update_grace_period
         ):
             # We skip update for 5 seconds after toggling the switch
             # This is because the router needs some time to change the wifi state
             _LOGGER.debug(
-                "Not updating switch state, because last toggle happend < 5 seconds ago"
+                "Not updating switch state, because last toggle happened < 5 seconds ago"
             )
         else:
             _LOGGER.debug(f"Updating {self.name} switch state...")
@@ -615,6 +693,7 @@ class FritzBoxWifiSwitch(SwitchEntity):
             await self._async_fetch_update()
 
     async def async_turn_on(self, **kwargs) -> None:
+        """Turn switch on."""
         success: bool = await self._async_handle_wifi_turn_on_off(turn_on=True)
         if success is True:
             self._is_on = True
@@ -626,6 +705,7 @@ class FritzBoxWifiSwitch(SwitchEntity):
             )
 
     async def async_turn_off(self, **kwargs) -> None:
+        """Turn switch off."""
         success: bool = await self._async_handle_wifi_turn_on_off(turn_on=False)
         if success is True:
             self._is_on = False
@@ -637,13 +717,21 @@ class FritzBoxWifiSwitch(SwitchEntity):
             )
 
     async def _async_handle_wifi_turn_on_off(self, turn_on: bool) -> bool:
+        """Handle wifi switch."""
         # pylint: disable=import-error
-        from fritzconnection.core.exceptions import FritzSecurityError, FritzConnectionException
+        from fritzconnection.core.exceptions import (
+            FritzConnectionException,
+            FritzSecurityError,
+        )
 
         try:
-            self.hass.async_add_executor_job(lambda: self._fritzbox_tools.connection.call_action(
-                f"WLANConfiguration{self._network_num}", "SetEnable", NewEnable="1" if turn_on else "0"
-            ))
+            self.hass.async_add_executor_job(
+                lambda: self._fritzbox_tools.connection.call_action(
+                    f"WLANConfiguration{self._network_num}",
+                    "SetEnable",
+                    NewEnable="1" if turn_on else "0",
+                )
+            )
         except FritzSecurityError:
             _LOGGER.error(
                 "Authorization Error: Please check the provided credentials and verify that you can log into "
