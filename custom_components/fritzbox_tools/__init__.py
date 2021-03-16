@@ -4,8 +4,6 @@ import socket
 
 import voluptuous as vol
 
-import homeassistant.helpers.config_validation as cv
-from homeassistant import config_entries
 from homeassistant.config_entries import SOURCE_IMPORT, SOURCE_REAUTH, ConfigEntry
 from homeassistant.const import (
     CONF_DEVICES,
@@ -38,8 +36,6 @@ from .const import (
     SUPPORTED_DOMAINS,
 )
 
-DATA_FRITZ_TOOLS_INSTANCE = "fritzbox_tools_instance"
-ATTR_HOST = "host"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -170,7 +166,7 @@ def setup_hass_services(hass):
             fritztools.service_reboot_fritzbox()
 
     def reconnect(call):
-        """Reboot fritzbox."""
+        """Reconnect fritzbox."""
         host = call.data.get(ATTR_HOST)
         fritztools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE].get(host, None)
         if fritztools is None:
@@ -207,7 +203,7 @@ async def async_unload_entry(hass: HomeAssistantType, entry: ConfigType) -> bool
 
 
 class FritzBoxTools:
-    """Fritzbox class."""
+    """FrtizBoxTools class."""
 
     """
     Attention: The initialization of the class performs sync I/O. If you're calling this from within Home Assistant,
@@ -226,7 +222,7 @@ class FritzBoxTools:
         use_wifi=DEFAULT_USE_WIFI,
         use_profiles=DEFAULT_USE_PROFILES,
     ):
-        """Init FritzTool class."""
+        """Initialize FritzboxTools class."""
         # pylint: disable=import-error
         from fritzconnection import FritzConnection
         from fritzconnection.core.exceptions import FritzConnectionException
