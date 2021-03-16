@@ -1,7 +1,10 @@
 """Constants for the FRITZ!Box Tools integration."""
 
 DOMAIN = "fritzbox_tools"
+DATA_FRITZ_TOOLS_INSTANCE = "fritzbox_tools_instance"
 SUPPORTED_DOMAINS = ["switch", "binary_sensor"]
+
+ATTR_HOST = "host"
 
 CONF_PROFILES = "profiles"
 

@@ -17,11 +17,13 @@ from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 from homeassistant.util import get_local_ip
 
 from .const import (
+    ATTR_HOST,
     CONF_PROFILES,
     CONF_USE_DEFLECTIONS,
     CONF_USE_PORT,
     CONF_USE_PROFILES,
     CONF_USE_WIFI,
+    DATA_FRITZ_TOOLS_INSTANCE,
     DEFAULT_HOST,
     DEFAULT_PORT,
     DEFAULT_PROFILES,
@@ -31,11 +33,13 @@ from .const import (
     DEFAULT_USE_WIFI,
     DEFAULT_USERNAME,
     DOMAIN,
+    ERROR_CONNECTION_ERROR,
+    ERROR_CONNECTION_ERROR_PROFILES,
+    ERROR_PROFILE_NOT_FOUND,
     SERVICE_REBOOT,
     SERVICE_RECONNECT,
     SUPPORTED_DOMAINS,
 )
-
 
 _LOGGER = logging.getLogger(__name__)
 
