@@ -36,11 +36,20 @@
                     "username": "Username",
                     "password": "Password"
                 }
-              }  
+              },  
+              "reauth_confirm": {
+                  "title": "Updating FRITZ!Box Tools - credentials",
+                  "description": "Update FRITZ!Box Tools credentials for: {host}.\n\nFRITZ!Box Tools is unable to log in to your FRITZ!Box.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
+                  "data": {
+                      "username": "Username",
+                      "password": "Password"
+                  }
+                }
         },
         "abort": {
           "already_in_progress": "FRITZ!Box configuration is already in progress.",
-          "already_configured": "This AVM FRITZ!Box is already configured."
+          "already_configured": "This AVM FRITZ!Box is already configured.",
+          "reauth_successful": "FRITZ!Box configuration successfully updated."
         },
         "error": {
             "connection_error": "Failed to connect to FRITZ!Box. Check your username and password.",

@@ -23,3 +23,7 @@ DEFAULT_PROFILES = []
 
 SERVICE_RECONNECT = "reconnect"
 SERVICE_REBOOT = "reboot"
+
+ERROR_CONNECTION_ERROR = "connection_error"
+ERROR_CONNECTION_ERROR_PROFILES = "connection_error_profiles"
+ERROR_PROFILE_NOT_FOUND = "profile_not_found"

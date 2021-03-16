@@ -313,3 +313,78 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
                 CONF_USE_PROFILES: DEFAULT_USE_PROFILES,
             },
         )
+
+    async def async_step_reauth(self, entry):
+        """Handle flow upon an API authentication error."""
+        self._entry = entry
+        self._host = entry.data.get(CONF_HOST, DEFAULT_HOST)
+        self._port = entry.data.get(CONF_PORT, DEFAULT_PORT)
+        self._username = entry.data.get(CONF_USERNAME)
+        self._password = entry.data.get(CONF_PASSWORD)
+        self._profiles = entry.data.get(CONF_PROFILES, DEFAULT_PROFILES)
+        self._use_port = entry.data.get(CONF_USE_PORT, DEFAULT_USE_PORT)
+        self._use_deflections = entry.data.get(CONF_USE_DEFLECTIONS, DEFAULT_USE_DEFLECTIONS)
+        self._use_wifi = entry.data.get(CONF_USE_WIFI, DEFAULT_USE_WIFI)
+        self._use_profiles = entry.data.get(CONF_USE_PROFILES, DEFAULT_USE_PROFILES)
+
+        return await self.async_step_reauth_confirm()
+
+    def _show_setup_form_reauth_confirm(self, user_input, errors=None):
+        """Show the reauth form to the user."""
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_USERNAME, default=user_input.get(CONF_USERNAME)): str,
+                    vol.Required(CONF_PASSWORD): str,
+                }
+            ),
+            description_placeholders={"host": self._host},
+            errors=errors or {},
+        )
+
+    async def async_step_reauth_confirm(self, user_input=None):
+        """Dialog that informs the user that reauth is required."""
+        if user_input is None:
+            return self._show_setup_form_reauth_confirm(
+                user_input={
+                    CONF_USERNAME: self._username
+                }
+            )
+
+        errors = {}
+
+        host = self._host
+        port = self._port
+        username = user_input.get(CONF_USERNAME)
+        password = user_input.get(CONF_PASSWORD)
+
+        self.fritz_tools = await self.hass.async_add_executor_job(lambda: FritzBoxTools(
+            host=host,
+            port=port,
+            username=username,
+            password=password,
+            profile_list=[]
+        ))
+
+        success, error = await self.hass.async_add_executor_job(self.fritz_tools.is_ok)
+        if not success:
+            errors["base"] = error
+            return self._show_setup_form_reauth_confirm(user_input=user_input, errors=errors)
+
+        self.hass.config_entries.async_update_entry(
+            self._entry,
+            data={
+                CONF_HOST: host,
+                CONF_PASSWORD: password,
+                CONF_PORT: port,
+                CONF_USERNAME: username,
+                CONF_PROFILES: self._profiles,
+                CONF_USE_WIFI: self._use_wifi,
+                CONF_USE_DEFLECTIONS: self._use_deflections,
+                CONF_USE_PORT: self._use_port,
+                CONF_USE_PROFILES: self._use_profiles,
+            },
+        )
+        await self.hass.config_entries.async_reload(self._entry.entry_id)
+        return self.async_abort(reason="reauth_successful")
