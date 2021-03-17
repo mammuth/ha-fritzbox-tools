@@ -19,7 +19,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.util import slugify
 
-from . import DATA_FRITZ_TOOLS_INSTANCE, DOMAIN
+from .const import DATA_FRITZ_TOOLS_INSTANCE, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
