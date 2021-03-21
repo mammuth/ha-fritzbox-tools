@@ -13,7 +13,7 @@ from homeassistant.components.ssdp import (
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_PORT, CONF_USERNAME
 
-from . import CONFIG_SCHEMA, FritzBoxTools
+from .common import CONFIG_SCHEMA, FritzBoxTools
 from .const import (
     CONF_PROFILES,
     CONF_USE_DEFLECTIONS,
@@ -334,7 +334,9 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         self._password = entry.data.get(CONF_PASSWORD)
         self._profiles = entry.data.get(CONF_PROFILES, DEFAULT_PROFILES)
         self._use_port = entry.data.get(CONF_USE_PORT, DEFAULT_USE_PORT)
-        self._use_deflections = entry.data.get(CONF_USE_DEFLECTIONS, DEFAULT_USE_DEFLECTIONS)
+        self._use_deflections = entry.data.get(
+            CONF_USE_DEFLECTIONS, DEFAULT_USE_DEFLECTIONS
+        )
         self._use_wifi = entry.data.get(CONF_USE_WIFI, DEFAULT_USE_WIFI)
         self._use_profiles = entry.data.get(CONF_USE_PROFILES, DEFAULT_USE_PROFILES)
 
@@ -346,7 +348,9 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
             step_id="reauth_confirm",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_USERNAME, default=user_input.get(CONF_USERNAME)): str,
+                    vol.Required(
+                        CONF_USERNAME, default=user_input.get(CONF_USERNAME)
+                    ): str,
                     vol.Required(CONF_PASSWORD): str,
                 }
             ),
@@ -358,9 +362,7 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         """Dialog that informs the user that reauth is required."""
         if user_input is None:
             return self._show_setup_form_reauth_confirm(
-                user_input={
-                    CONF_USERNAME: self._username
-                }
+                user_input={CONF_USERNAME: self._username}
             )
 
         errors = {}
@@ -370,18 +372,22 @@ class FritzBoxToolsFlowHandler(ConfigFlow):
         username = user_input.get(CONF_USERNAME)
         password = user_input.get(CONF_PASSWORD)
 
-        self.fritz_tools = await self.hass.async_add_executor_job(lambda: FritzBoxTools(
-            host=host,
-            port=port,
-            username=username,
-            password=password,
-            profile_list=[]
-        ))
+        self.fritz_tools = await self.hass.async_add_executor_job(
+            lambda: FritzBoxTools(
+                host=host,
+                port=port,
+                username=username,
+                password=password,
+                profile_list=[],
+            )
+        )
 
         success, error = await self.hass.async_add_executor_job(self.fritz_tools.is_ok)
         if not success:
             errors["base"] = error
-            return self._show_setup_form_reauth_confirm(user_input=user_input, errors=errors)
+            return self._show_setup_form_reauth_confirm(
+                user_input=user_input, errors=errors
+            )
 
         self.hass.config_entries.async_update_entry(
             self._entry,
