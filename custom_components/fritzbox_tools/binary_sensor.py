@@ -16,6 +16,7 @@ except ImportError:
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.typing import HomeAssistantType
+from homeassistant.const import CONF_HOST
 
 from .const import DATA_FRITZ_TOOLS_INSTANCE, DOMAIN
 
@@ -29,7 +30,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up entry."""
     _LOGGER.debug("Setting up sensors")
-    fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][entry.entry_id]
+    fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][entry.data.get(CONF_HOST)]
 
     if "WANIPConn1" in fritzbox_tools.connection.services:
         """ We do not support repeaters at the moment """

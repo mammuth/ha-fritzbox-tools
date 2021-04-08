@@ -18,6 +18,7 @@ except ImportError:
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.util import slugify
+from homeassistant.const import CONF_HOST
 
 from .const import DATA_FRITZ_TOOLS_INSTANCE, DOMAIN
 
@@ -31,7 +32,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up entry."""
     _LOGGER.debug("Setting up switches")
-    fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][entry.entry_id]
+    fritzbox_tools = hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][entry.data.get(CONF_HOST)]
 
     def _create_deflection_switches():
         if "X_AVM-DE_OnTel1" in fritzbox_tools.connection.services:
