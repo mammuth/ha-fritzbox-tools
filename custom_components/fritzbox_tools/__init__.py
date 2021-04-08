@@ -90,7 +90,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         return False
 
     hass.data.setdefault(DOMAIN, {DATA_FRITZ_TOOLS_INSTANCE: {}, CONF_DEVICES: set()})
-    hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][entry.entry_id] = fritz_tools
+    hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE][host] = fritz_tools
 
     setup_hass_services(hass)
 
@@ -144,7 +144,7 @@ def setup_hass_services(hass):
 
 async def async_unload_entry(hass: HomeAssistantType, entry: ConfigType) -> bool:
     """Unload FRITZ!Box Tools config entry."""
-    hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE].pop(entry.entry_id)
+    hass.data[DOMAIN][DATA_FRITZ_TOOLS_INSTANCE].pop(entry.data.get(CONF_HOST))
     hass.services.async_remove(DOMAIN, SERVICE_RECONNECT)
     hass.services.async_remove(DOMAIN, SERVICE_REBOOT)
 
