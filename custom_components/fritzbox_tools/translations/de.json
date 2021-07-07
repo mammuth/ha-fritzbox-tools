@@ -3,60 +3,60 @@
         "flow_title": "FRITZ!Box Tools: {name}",
         "step": {
           "setup_options": {
-              "title": "Setup FRITZ!Box Tools - optional settings",
-              "description": "Select which features you want to use.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
+              "title": "Einrichtung FRITZ!Box Tools - Optionale Einstellungen",
+              "description": "Wähle aus, welche Funktionen du verwenden möchtest.\nDokumentation: https://github.com/mammuth/ha-fritzbox-tools",
               "data": {
-                  "use_profiles": "access profile switches",
-                  "use_wifi": "wifi switches",
-                  "use_port": "port forwarding switches for hass device",
-                  "use_deflections": "call deflection switches"
+                  "use_profiles": "Zugangsprofil-Schalter",
+                  "use_wifi": "wifi Schalter",
+                  "use_port": "port forwarding Schalter für HomeAssistant Gerät",
+                  "use_deflections": "Rufumleitungs-Schalter"
               }
             },
             "setup_profiles": {
-                "title": "Setup FRITZ!Box Tools - profile settings",
-                "description": "Access profiles needs at least one profile.\nCheck your profiles in the FRITZ!Box at Internet/Filters/Access Profiles\nleave it empty if you don't need it.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
+                "title": "Einrichtung FRITZ!Box Tools - Profileinstellungen",
+                "description": "Zugangsprofile benötigt mindestens ein Profil.\nPrüfe deine Profile in der FRITZ!Box bei Internet/Filter/Zugangsprofile\nlass das Feld leer wenn du dieses Feature nicht brauchst.\nDokumentation: https://github.com/mammuth/ha-fritzbox-tools",
                 "data": {
-                    "profiles": "Access profiles: Comma separated list of profile names"
+                    "profiles": "Zugangsprofile: Kommagetrennte Liste der verfügbaren Zugangsprofile"
                 }
               },
               "confirm": {
-                  "title": "Setup FRITZ!Box Tools",
-                  "description": "Discovered FRITZ!Box: {name}\n\nSetup FRITZ!Box Tools to control your {name}\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
+                  "title": "Einrichtung FRITZ!Box Tools",
+                  "description": "FRITZ!Box entdeckt: {name}\n\Richte FRITZ!Box Tools ein, um deine {name} zu steuern\nDokumentation: https://github.com/mammuth/ha-fritzbox-tools",
                   "data": {
-                      "username": "Username",
-                      "password": "Password"
+                      "username": "Benutzername",
+                      "password": "Passwort"
                   }
                 },
               "start_config": {
-                "title": "Setup FRITZ!Box Tools - mandatory",
-                "description": "Setup FRITZ!Box Tools to control your FRITZ!Box.\nMinimum needed: username, password.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
+                "title": "Einrichtung FRITZ!Box Tools - erforderlich",
+                "description": "Richte FRITZ!Box Tools ein, um deine FRITZ!Box zu steuern.\nMindestens benötigt: Benutzername, Passwort.\nDokumentation: https://github.com/mammuth/ha-fritzbox-tools",
                 "data": {
                     "host": "Host",
                     "port": "Port",
-                    "username": "Username",
-                    "password": "Password"
+                    "username": "benutzername",
+                    "password": "Passwort"
                 }
               },  
               "reauth_confirm": {
-                  "title": "Updating FRITZ!Box Tools - credentials",
-                  "description": "Update FRITZ!Box Tools credentials for: {host}.\n\nFRITZ!Box Tools is unable to log in to your FRITZ!Box.\nDocumentation: https://github.com/mammuth/ha-fritzbox-tools",
+                  "title": "FRITZ!Box Tools aktualisieren - Zugangsdaten",
+                  "description": "Ändere die FRITZ!Box Tools Zugangsdaten für: {host}.\n\nFRITZ!Box Tools kann sich nicht an deiner FRITZ!Box anmelden.\nDokumentation: https://github.com/mammuth/ha-fritzbox-tools",
                   "data": {
-                      "username": "Username",
-                      "password": "Password"
+                      "username": "Benutzername",
+                      "password": "Passwort"
                   }
                 }
         },
         "abort": {
-          "already_in_progress": "FRITZ!Box configuration is already in progress.",
-          "already_configured": "This AVM FRITZ!Box is already configured.",
-          "reauth_successful": "FRITZ!Box configuration successfully updated."
+          "already_in_progress": "FRITZ!Box Einrichtung findet bereits statt.",
+          "already_configured": "Diese AVM FRITZ!Box ist bereits eingerichtet.",
+          "reauth_successful": "FRITZ!Box Konfiguration erfolgreich aktualisiert."
         },
         "error": {
-            "connection_error": "Failed to connect to FRITZ!Box. Check your username and password.",
-            "connection_error_profiles": "Profile switches only work if login with FRITZ!Box user name and password is enabled in the FRITZ!Box. This can be changed in the FRITZ!Box at System/FRITZ!Box Users/Login to the Home Network.",
-            "profile_not_found": "The format of the spcified profile(s) is wrong or profile not found in FRITZ!Box. Check your profiles in the FRITZ!Box at Internet/Filters/Access Profiles.",
-            "already_in_progress": "FRITZ!Box configuration is already in progress.",
-            "already_configured": "This AVM FRITZ!Box is already configured."
+            "connection_error": "Konnte nicht mit deiner FRITZ!Box verbinden. Überprüfe deinen Benutzernamen und das Passwort.",
+            "connection_error_profiles": "Zugangsprofil-Schalter funktionieren nur, wenn anmeldung mit Benutzername und Passwort in deiner FRITZ!Box aktiviert ist. Dies kann unter System/FRITZ!Box Benutzer geändert werden.",
+            "profile_not_found": "Das Foramt der Profile ist fehlerhaft oder die Profile wurden nicht gefunden. Überprüfe die Profile in deiner FRITZ!Box unter Internet/Filter/Zugangsprofile.",
+            "already_in_progress": "FRITZ!Box Einrichtung ist bereits im Gange.",
+            "already_configured": "Diese AVM FRITZ!Box ist bereits eingerichtet."
         }
     }
 }
