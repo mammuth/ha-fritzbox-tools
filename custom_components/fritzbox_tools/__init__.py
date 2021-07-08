@@ -11,6 +11,8 @@ from homeassistant.const import (
 )
 from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 
+import homeassistant
+
 from .common import SERVICE_SCHEMA, FritzBoxTools
 from .const import (
     ATTR_HOST,
@@ -36,6 +38,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+CONF_OUTDATED = True
 
 async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
     """Set up FRITZ!Box Tools component."""
@@ -52,7 +55,13 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool:
     """Set up fritzboxtools from config entry."""
+
+    if CONF_OUTDATED:
+        _LOGGER.error("Please uninstall ha-fritzbox-tools and use the core integration fritz instead. Thanks for using ha-fritzbox-tools in the past.")
+        return
+
     _LOGGER.debug("Setting up FRITZ!Box Tools component")
+
     host = entry.data.get(CONF_HOST, DEFAULT_HOST)
     port = entry.data.get(CONF_PORT, DEFAULT_PORT)
     username = entry.data.get(CONF_USERNAME)
