@@ -1,8 +1,8 @@
-# FRITZ!Box Tools
+# FRITZ!Box Tools - Deprecated as of HomeAssistant 2021.7.0
 
 <a href="https://www.buymeacoffee.com/mammuth" target="_blank"><img src="https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
 
-Custom component for Home Assistant to control your FRITZ!Box
+This custom integration is now deprecated because is fully merged into HomeAssistant core.
 
 **Features:**
 
