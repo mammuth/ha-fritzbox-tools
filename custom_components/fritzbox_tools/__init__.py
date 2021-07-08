@@ -55,8 +55,12 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
     """Set up fritzboxtools from config entry."""
 
     if CONF_OUTDATED:
-        _LOGGER.error("Please uninstall ha-fritzbox-tools and use the core integration fritz instead. Thanks for using ha-fritzbox-tools in the past.")
-        return
+        hass.components.persistent_notification.async_create(
+            "Please uninstall ha-fritzbox-tools and use the core integration fritz instead. Thanks for using ha-fritzbox-tools in the past.",
+            title="Fritzboxtools is outdated!",
+            notification_id="hafritzboxtools_outdated",
+        )
+        return False
 
     _LOGGER.debug("Setting up FRITZ!Box Tools component")
 
