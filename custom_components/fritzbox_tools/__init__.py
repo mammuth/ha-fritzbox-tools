@@ -11,8 +11,6 @@ from homeassistant.const import (
 )
 from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 
-import homeassistant
-
 from .common import SERVICE_SCHEMA, FritzBoxTools
 from .const import (
     ATTR_HOST,
