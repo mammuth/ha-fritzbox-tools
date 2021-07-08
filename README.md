@@ -1,4 +1,6 @@
-# FRITZ!Box Tools - Deprecated as of HomeAssistant 2021.7.0
+# FRITZ!Box Tools - part as of HomeAssistant since 2021.7.0
+
+Thanks for suporting us with this custom integration. As of HA core 2021.7.0 all functionlities of this integration are part of HA core. This custom integration is not maintained anymore, as a result.
 
 <a href="https://www.buymeacoffee.com/mammuth" target="_blank"><img src="https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
 
